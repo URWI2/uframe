@@ -16,7 +16,7 @@ uframe
 
 
 
-This oackage provides uframes, to work with uncertain data in python.
+This package provides uframes for working with uncertain data in python.
 
 
 * Free software: GNU General Public License v3
