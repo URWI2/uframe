@@ -3,6 +3,7 @@ uframe_instance class used in uframe to depict a single uncertain data instance.
 
 """
 import scipy 
+import numpy as np
 
 class uframe_instance(): 
     """
@@ -14,10 +15,10 @@ class uframe_instance():
    ----------
    continuous : class
        A class describing the underlying uncertainty.
-   certain : list[float] 
-       List of certain values
-   colnames : list[str]
-       associations from colnames and indices to dimensions of continuous and certain
+   certain_data : np.array 
+       Numpy array of certain values
+   indices : [list,list]
+       associations of indices to continuous and certain
 
    Methods
    -------
@@ -37,6 +38,13 @@ class uframe_instance():
         indices : tupel
             tupel of indices which indicates the order in which samples and modal values should be returned.
         """
+        
+        assert type(uncertain_obj) in [scipy.stats._kde.gaussian_kde]
+        assert type(certain_data) in [np.ndarray,np.array]
+        assert type(indices) == list
+        assert len(indices) == 2
+        assert len(certain_data) == len(indices[1])
+        
         
         
         if type(uncertain_obj) == scipy.stats._kde.gaussian_kde:
@@ -63,6 +71,9 @@ class uframe_instance():
         
     def __repr__(self):
         print("Data Instance")
+    
+    def __len__(self): 
+        return self.n_vars
         
     def __modal_scipy_kde(self): 
         opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x),[0,0] )
