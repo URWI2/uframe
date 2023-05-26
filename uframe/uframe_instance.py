@@ -26,10 +26,21 @@ class uframe_instance():
        
    """
    
-    def __init__(self,data): 
+    def __init__(self,uncertain_obj, certain_data, indices): 
+        """
+        Parameters
+        ----------
+        uncertain_obj : scipy.stats._kde.gaussian_kde | scipy.stats
+            Scipy Kernel Density Estimation or other, that describes the ucnertain Variables of the instance.
+        certain_data 1D np.array
+            Certain data instances.
+        indices : tupel
+            tupel of indices which indicates the order in which samples and modal values should be returned.
+        """
         
-        if type(data) == scipy.stats._kde.gaussian_kde:
-            self.__init_scipy_kde(data)
+        
+        if type(uncertain_obj) == scipy.stats._kde.gaussian_kde:
+            self.__init_scipy_kde(uncertain_obj)
             
     
     def sample(self,n: int = 1, seed: int= None): 
