@@ -48,13 +48,22 @@ class uframe_instance():
         if type(self.continuous) == scipy.stats._kde.gaussian_kde:
             return self.__sample_scipy_kde(n)
         
-    
+    def modal(self): 
+        
+        if type(self.continuous) == scipy.stats._kde.gaussian_kde:
+            return self.__modal_scipy_kde()
+        
+        
+        
     def __str__(self):
         print("Data Instance")
         
     def __repr__(self):
         print("Data Instance")
         
+    def __modal_scipy_kde(self): 
+        opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x),[0,0] )
+        return opt.x
         
     def __init_scipy_kde(self, kernel):
         self.continuous = kernel
