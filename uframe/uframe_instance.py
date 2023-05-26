@@ -26,7 +26,7 @@ class uframe_instance():
        
    """
    
-    def __init__(self,uncertain_obj, certain_data, indices): 
+    def __init__(self,uncertain_obj:scipy.stats.gaussian_kde, certain_data:np.array, indices:list[list]): 
         """
         Parameters
         ----------
@@ -41,17 +41,20 @@ class uframe_instance():
         
         if type(uncertain_obj) == scipy.stats._kde.gaussian_kde:
             self.__init_scipy_kde(uncertain_obj)
-            
-    
+       
+        self.certain_data = certain_data 
+        self.indices = indices
+        self.n_vars = max(max(self.indices[0]),max(self.indices[0])) +1
+        
     def sample(self,n: int = 1, seed: int= None): 
         
         if type(self.continuous) == scipy.stats._kde.gaussian_kde:
-            return self.__sample_scipy_kde(n)
+            return self.__align(self.__sample_scipy_kde(n))
         
     def modal(self): 
         
         if type(self.continuous) == scipy.stats._kde.gaussian_kde:
-            return self.__modal_scipy_kde()
+            return self.__align(self.__modal_scipy_kde())
         
         
         
@@ -69,4 +72,11 @@ class uframe_instance():
         self.continuous = kernel
     
     def __sample_scipy_kde(self, n): 
-        return self.continuous.resample(n)
+        return self.continuous.resample(n).transpose()
+    def __align(self,uncertain_values): 
+        
+        ret = np.zeros(self.n_vars)
+        ret[self.indices[0]] = np.array(uncertain_values)
+        ret[self.indices[1]] = self.certain_data
+        return ret
+    
