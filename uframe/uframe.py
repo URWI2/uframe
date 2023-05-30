@@ -6,7 +6,6 @@ class uframe():
     """
     A class used for storing and working with uncertain data. 
 
-    
     ...
 
     ----------
@@ -83,27 +82,36 @@ class uframe():
             else:
                 for i in range(new.shape[0]):
                     self.data.append(uframe_instance(uncertain_obj=None, certain_data=new[i,:], 
-                                                     indices=[[],list(range(new.shape[1]))]))
+                                                     indices=[[],[*list(range(new.shape[1]))]]))
         else:
             for i in range(new.shape[0]):
                 self.data.append(uframe_instance(uncertain_obj=None, certain_data=new[i,:], 
-                                                 indices=[[],list(range(new.shape[1]))]))
-            self.columns= list(range(new.shape[1]))
+                                                 indices=[[],[*list(range(new.shape[1]))]]))
+            self.columns= [*list(range(new.shape[1]))]
             self._colnames = {i:i for i in range(0, new.shape[1]) }
             
         #append the rownames of the new data, this should not depend on data type 
         
-        self.rows.append(rownames)
-        self._rownames.append({rownames[i]: len(self.data)-new.shape[0]+i for i in range(len(rownames))})
+        if rownames!=None:
+            self.rows = self.rows + rownames
+            self._rownames.update({rownames[i]: len(self.data)-new.shape[0]+i for i in range(len(rownames))})
+        else:
+            self.rows = self.rows + [*list(range(len(self.data)-new.shape[0], len(self.data)))]
+            self._rownames.update({i:i for i in range(len(self.data)-new.shape[0], len(self.data))})
         
         return 
         
-    def __repr__(self): 
-        print('pending') 
+    # def __repr__(self): 
+
+    #     return "Object of class uframe"
+        
     def __str__(self):
         print('pending')
 
     def modal(self):
+        
+        res = np.array([inst.modal() for inst in self.data])
+
         print('pending')
        
     def sample(self, n=1, seed = None): 
