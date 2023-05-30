@@ -38,9 +38,10 @@ class uframe_instance():
         indices : tupel
             tupel of indices which indicates the order in which samples and modal values should be returned.
         """
-        
-        assert type(uncertain_obj) in [scipy.stats._kde.gaussian_kde]
-        assert type(certain_data) in [np.ndarray,np.array]
+        if uncertain_obj is not None:
+            assert  type(uncertain_obj) in [scipy.stats._kde.gaussian_kde]
+        if certain_data is not None:
+            assert type(certain_data) in [np.ndarray,np.array]
         assert type(indices) == list
         assert len(indices) == 2
         assert len(certain_data) == len(indices[1])
