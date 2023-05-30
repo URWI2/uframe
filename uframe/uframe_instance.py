@@ -39,7 +39,7 @@ class uframe_instance():
             tupel of indices which indicates the order in which samples and modal values should be returned.
         """
         if uncertain_obj is not None:
-            assert  type(uncertain_obj) in [scipy.stats._kde.gaussian_kde]
+            assert  type(uncertain_obj) in [scipy.stats._kde.gaussian_kde,scipy.stats.kde.gaussian_kde]
         if certain_data is not None:
             assert type(certain_data) in [np.ndarray,np.array]
         assert type(indices) == list
@@ -48,7 +48,7 @@ class uframe_instance():
         
         
         
-        if type(uncertain_obj) == scipy.stats._kde.gaussian_kde:
+        if type(uncertain_obj) in [scipy.stats._kde.gaussian_kde, scipy.stats.kde.gaussian_kde]:
             self.__init_scipy_kde(uncertain_obj)
        
         self.certain_data = certain_data 
@@ -57,12 +57,12 @@ class uframe_instance():
         
     def sample(self,n: int = 1, seed: int= None): 
         
-        if type(self.continuous) == scipy.stats._kde.gaussian_kde:
+        if type(self.continuous) in [scipy.stats._kde.gaussian_kde, scipy.stats.kde.gaussian_kde]:
             return self.__align(self.__sample_scipy_kde(n))
         
     def modal(self): 
         
-        if type(self.continuous) == scipy.stats._kde.gaussian_kde:
+        if type(self.continuous) in [scipy.stats._kde.gaussian_kde, scipy.stats.kde.gaussian_kde]:
             return self.__align(self.__modal_scipy_kde())
         
         
