@@ -68,9 +68,13 @@ class uframe():
         
         return 
     
-    def append(self):
+    def append(self, new=None):
         print('pending, need to evaluate what data is given to the function')
         
+        if type(new)==np.ndarray:
+            self.append_from_numpy(self.new)
+        
+        return 
     
     #append a numpy array with certain data (2D-array)
     def append_from_numpy(self, new=None, rownames= None):
@@ -100,31 +104,59 @@ class uframe():
             self._rownames.update({i:i for i in range(len(self.data)-new.shape[0], len(self.data))})
         
         return 
-        
-    # def __repr__(self): 
+    
+    #missing: more append functions (from scipy.stats.gaussian_kde next (resp. list of those))
+    #append from list of distributions
+    #append from uframe instances
+    #append from yet to be defined mixtures of certain values and distributions
+    #for example the np.array with None values and corresponding dict of multidimensional kdes 
+    #(see Felde bachelor thesis for example)
+    
+    def append_from_scipy_kde(self, new):
+        return 
+    
+    
+    
+    def __repr__(self): 
 
-    #     return "Object of class uframe"
+        return "Object of class uframe"
+    
         
     def __str__(self):
-        print('pending')
+        
+        return 'pending'
 
+    #needs to be tested with an uncertain instance, need to fix modal so that it works
+    #if there are no uncertain variables in the uframe_instance
+    
+    #also missing: functions for renaming or reordering columns/ rows 
+    #need decorators for that
+    
     def modal(self):
         
         res = np.array([inst.modal() for inst in self.data])
 
-        print('pending')
-       
+        return res
+    
+    #also untested as of now, need proper test instance and test script 
     def sample(self, n=1, seed = None): 
-        print('pending')
+        
+        res = np.array([inst.sample(n, seed) for inst in self.data])
+        
+        return res 
 
     def ev(self): 
         print('pending')
+        return 
         
     def get_dummies(self):
         print('pending')
-        
+        return 
+    
     def __getitem__ (self, index): 
         print('pending')
+        return self.data[index]
+
 
 if __name__=="__main__":
     a = uframe()
