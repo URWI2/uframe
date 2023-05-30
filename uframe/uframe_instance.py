@@ -39,30 +39,32 @@ class uframe_instance():
             tupel of indices which indicates the order in which samples and modal values should be returned.
         """
         if uncertain_obj is not None:
-            assert  type(uncertain_obj) in [scipy.stats._kde.gaussian_kde,scipy.stats.kde.gaussian_kde]
+            assert  type(uncertain_obj) in [scipy.stats._kde.gaussian_kde]
         if certain_data is not None:
             assert type(certain_data) in [np.ndarray,np.array]
+            assert len(certain_data) == len(indices[1])
+            
         assert type(indices) == list
         assert len(indices) == 2
-        assert len(certain_data) == len(indices[1])
         
         
         
-        if type(uncertain_obj) in [scipy.stats._kde.gaussian_kde, scipy.stats.kde.gaussian_kde]:
+        
+        if type(uncertain_obj) == scipy.stats._kde.gaussian_kde:
             self.__init_scipy_kde(uncertain_obj)
        
         self.certain_data = certain_data 
         self.indices = indices
-        self.n_vars = max(max(self.indices[0]),max(self.indices[0])) +1
+        self.n_vars = self.__get_len(indices)
         
     def sample(self,n: int = 1, seed: int= None): 
         
-        if type(self.continuous) in [scipy.stats._kde.gaussian_kde, scipy.stats.kde.gaussian_kde]:
+        if type(self.continuous) == scipy.stats._kde.gaussian_kde:
             return self.__align(self.__sample_scipy_kde(n))
         
     def modal(self): 
         
-        if type(self.continuous) in [scipy.stats._kde.gaussian_kde, scipy.stats.kde.gaussian_kde]:
+        if type(self.continuous) == scipy.stats._kde.gaussian_kde:
             return self.__align(self.__modal_scipy_kde())
         
         
@@ -85,6 +87,16 @@ class uframe_instance():
     
     def __sample_scipy_kde(self, n): 
         return self.continuous.resample(n).transpose()
+    def __get_len(self, indices): 
+        if len(indices[0])==0: 
+            return max(self.indices[1])+1
+                       
+        if len(indices[1])==0: 
+            return max(self.indices[0])+1
+        
+        return max(max(self.indices[0]),max(self.indices[0])) +1
+    
+    
     def __align(self,uncertain_values): 
         
         ret = np.zeros(self.n_vars)
