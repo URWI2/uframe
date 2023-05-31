@@ -53,7 +53,11 @@ class uframe_instance():
         
         if type(uncertain_obj) == scipy.stats._kde.gaussian_kde:
             self.__init_scipy_kde(uncertain_obj)
-       
+        if type(uncertain_obj) == sklearn.neighbors._kde.KernelDensity: 
+            self.__init_sklearn_kde(uncertain_obj)
+            
+            
+            
         self.certain_data = certain_data 
         self.indices = indices
         self.n_vars = self.__get_len(indices)
@@ -63,10 +67,18 @@ class uframe_instance():
         if type(self.continuous) == scipy.stats._kde.gaussian_kde:
             return self.__align(self.__sample_scipy_kde(n))
         
+        if type(self.continuous) == sklearn.neighbors._kde.KernelDensity:
+            return self.__align(self.__sample_sklearn_kde(n, seed = seed))
+        
+        
     def modal(self): 
         
         if type(self.continuous) == scipy.stats._kde.gaussian_kde:
             return self.__align(self.__modal_scipy_kde())
+        
+        if type(self.continuous) == sklearn.neighbors._kde.KernelDensity:
+            return self.__align(self.__modal_sklearn_kde())
+        
         
         
         
@@ -80,14 +92,31 @@ class uframe_instance():
         return self.n_vars
         
     def __modal_scipy_kde(self): 
-        opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x),[0,0] )
+        opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x),np.zeros(self.n_vars) )
         return opt.x
+        
+    def __modal_sklearn_kde(self): 
+        opt = scipy.optimize.basinhopping(lambda x: -self.continuous.score_samples(x.reshape(1,-1)), np.zeros(len(self.indices[0])) )
+        return opt.x
+        
         
     def __init_scipy_kde(self, kernel):
         self.continuous = kernel
     
+    def __init_sklearn_kde(self, kernel): 
+        self.continuous = kernel
+        
+        if self.continuous.get_params()["kernel"] not in ["gaussian", "tophat"]: 
+            warnings.warn("The provided KDE does not has an gaussian or tophat kernel, this might result in Errors")
+    
+    
     def __sample_scipy_kde(self, n): 
         return self.continuous.resample(n).transpose()
+    
+    def __sample_sklearn_kde(self, n, seed = None) :
+        return self.continuous.sample(n_samples = n, random_state = seed)
+    
+    
     def __get_len(self, indices): 
         if len(indices[0])==0: 
             return max(self.indices[1])+1
