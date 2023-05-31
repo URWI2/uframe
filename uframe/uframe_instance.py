@@ -140,15 +140,18 @@ class uframe_instance():
         if not hasattr(self, "continuous"):
             return self.certain_data
 
-    def __sample_scipy_kde(self, n): 
-        return self.__align(self.continuous.resample(n).transpose())
+    def __sample_scipy_kde(self, n, seed = None): 
+        return self.__align(self.continuous.resample(n, seed = seed).transpose())
     
     def __sample_sklearn_kde(self, n, seed = None) :
         return self.__align(self.continuous.sample(n_samples = n, random_state = seed))
     
     def __sample_scipy_rv_c(self, n, seed = None) :
+        if n > 1: 
+            return self.__align(self.continuous.rvs(size = n, random_state = seed).reshape(n,len(self.indices[0])))
+        
         return self.__align(self.continuous.rvs(size = n, random_state = seed))
-    
+        
     
     def __get_len(self, indices): 
         if len(indices[0])==0: 
@@ -197,3 +200,6 @@ class uframe_instance():
         ret[:,self.indices[1]] = self.certain_data
         return ret
     
+    
+
+
