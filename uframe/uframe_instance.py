@@ -148,7 +148,7 @@ class uframe_instance():
     
     def __sample_scipy_rv_c(self, n, seed = None) :
         if n > 1: 
-            return self.__align(self.continuous.rvs(size = n, random_state = seed).reshape(n,1))
+            return self.__align(self.continuous.rvs(size = n, random_state = seed).reshape(n,len(self.indices[0])))
         
         return self.__align(self.continuous.rvs(size = n, random_state = seed))
         
