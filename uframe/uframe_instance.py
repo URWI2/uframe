@@ -22,12 +22,14 @@ class uframe_instance():
    certain_data : np.array 
        Numpy array of certain values
    indices : [list,list]
-       associations of indices to continuous and certain
+       associations of indices to continuous and certain data
 
    Methods
    -------
    sample(n = 1, seed = None)
        Samples n samples from the uncertain instance
+       
+       
        
    """
    
@@ -107,24 +109,22 @@ class uframe_instance():
     
     
     #modal functions
-    def modal(self): 
+    def mode(self): 
         if not hasattr(self, "continuous"):
             return self.certain_data
     
-    def __modal_scipy_kde(self): 
+    def __mode_scipy_kde(self): 
         opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x),np.zeros(self.n_vars) )
         return opt.x.reshape(1,-1)
         
-    def __modal_sklearn_kde(self): 
+    def __mode_sklearn_kde(self): 
         opt = scipy.optimize.basinhopping(lambda x: -self.continuous.score_samples(x.reshape(1,-1)), np.zeros(len(self.indices[0])) )
         return opt.x.reshape(1,-1)
     
-    def __modal_scipy_rv_c(self): 
+    def __mode_scipy_rv_c(self): 
         opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x), self.continuous.mean())
         return opt.x.reshape(1,-1)
-                
-
-        
+              
         
     
     #sampling functions
