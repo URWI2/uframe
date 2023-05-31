@@ -119,8 +119,7 @@ class uframe():
                                                      indices=[[],[*list(range(new.shape[1]))]]))
         else:
             for i in range(new.shape[0]):
-                self.data.append(uframe_instance(uncertain_obj=None, certain_data=new[i,:], 
-                                                 indices=[[],[*list(range(new.shape[1]))]]))
+                self.data.append(uframe_instance(uncertain_obj=None, certain_data=new[i,:], indices=[[],[*list(range(new.shape[1]))]]))
                 
             if colnames is None:
                 self._columns= [*list(range(new.shape[1]))]
@@ -387,7 +386,7 @@ def uframe_noisy_array(a:np.ndarray, std=0.1, relative=False, unc_percentage = 0
 
 if __name__=="__main__":
     a = uframe()
-    a.append_from_numpy(new=np.identity(3))
+    #a.append_from_numpy(new=np.identity(3))
     
     def measure(n):
         m1 = np.random.normal(size=n)
@@ -402,7 +401,7 @@ if __name__=="__main__":
     kernel_list = [kernel]
     
     b = uframe()
-    #b.append_from_scipy_kde(kernel_list)
+    b.append_from_scipy_kde(kernel_list)
     #print(b.sample(n=1))
     #print(b.modal())
     b.append(new=np.identity(2))
