@@ -2,6 +2,7 @@ import numpy as np
 from uframe_instance import uframe_instance
 import scipy
 from scipy import stats 
+from sklearn.neighbors import KernelDensity
 
 #make only a private attribute _col_dtype, which is settled automatically
 #check for contradictions with categorical variables, but only add it after we have categorical variables 
@@ -140,22 +141,53 @@ class uframe():
     def append_from_scipy_kde(self, kernel_list, colnames=None):
         
         if len(self.columns)>0:
+           
+           dimensions = len([kernel.d for kernel in kernel_list if kernel.d==len(self.columns)])
+           if dimensions!=len(kernel_list):
+               raise ValueError("Dimension of list element does not match dimension of uframe")
+        
+        else:
+           #check if all kernels have the same dimension 
+           dimensions = len([kernel.d for kernel in kernel_list if kernel.d==kernel_list[0].d])
+           if dimensions!=len(kernel_list):
+               raise ValueError("Kernels in list must have same dimension")
+       
+           if colnames is None:
+               self._columns = [*list(range(kernel_list[0].d))]
+               self._colnames = {i:i for i in range(kernel_list[0].d)}
+           else:
+               if len(colnames)!=kernel_list[0].d:
+                   raise ValueError("Length of column list does not match size of value array")
+               else:
+                   self._columns = colnames
+                   self._colnames = {name:i for i, name in enumerate(colnames)}
+               
+        for i, kernel in enumerate(kernel_list):
+           self.data.append(uframe_instance(uncertain_obj=kernel, certain_data=None,
+                                            indices=[[*list(range(kernel.d))],[]]))
+        
+        return 
+    
+    def append_from_sklearn_kde(self, kernel_list, colnames=None):
+        
+        if len(self.columns)>0:
             
-            dimensions = len([kernel.d for kernel in kernel_list if kernel.d==len(self.columns)])
-            if dimensions!=len(self.columns):
+            print("Number of features", kernel_list[0].n_features_in_)
+            dimensions = len([kernel.n_features_in_ for kernel in kernel_list if kernel.n_features_in_==len(self.columns)])
+            if dimensions!=len(kernel_list):
                 raise ValueError("Dimension of list element does not match dimension of uframe")
          
         else:
             #check if all kernels have the same dimension 
-            dimensions = len([kernel.d for kernel in kernel_list if kernel.d==kernel_list[0].d])
+            dimensions = len([kernel.n_features_in_ for kernel in kernel_list if kernel.n_features_in_==kernel_list[0].d])
             if dimensions!=len(kernel_list):
                 raise ValueError("Kernels in list must have same dimension")
         
             if colnames is None:
-                self._columns = [*list(range(kernel_list[0].d))]
-                self._colnames = {i:i for i in range(kernel_list[0].d)}
+                self._columns = [*list(range(kernel_list[0].n_features_in_))]
+                self._colnames = {i:i for i in range(kernel_list[0].n_features_in_)}
             else:
-                if len(colnames)!=kernel_list[0].d:
+                if len(colnames)!=kernel_list[0].n_features_in_:
                     raise ValueError("Length of column list does not match size of value array")
                 else:
                     self._columns = colnames
@@ -163,10 +195,10 @@ class uframe():
                 
         for i, kernel in enumerate(kernel_list):
             self.data.append(uframe_instance(uncertain_obj=kernel, certain_data=None,
-                                             indices=[[*list(range(kernel.d))],[]]))
+                                             indices=[[*list(range(kernel.n_features_in_))],[]]))
         
-        return 
-    
+        
+        
     #assume dictionary with indices of incomplete lines as keys and scipy kdes as values 
     #nan values for uncertain values in array certain 
     #have to add colnames (and possibly rownames as parameters instead of the defaults)
@@ -240,7 +272,7 @@ class uframe():
     #erstellt kernels und greift auf bereits existierende append-Funktion zurück
     #bislang nur implementiert für scipy Gaussian kernel 
     #andere Kernels, welche auf sklearn basieren, folgen 
-    def append_from_samples(self, samples_list, kernel='Gaussian', colnames=None):
+    def append_from_samples(self, samples_list, kernel='stats.gaussian_kde', colnames=None):
         
         if len(samples_list)<1:
             raise ValueError("No samples given")
@@ -254,16 +286,20 @@ class uframe():
             
             #dim = samples.shape[0]
             
-            if kernel=='Gaussian':
+            if kernel=='stats.gaussian_kde':
                 kernel = stats.gaussian_kde(values)
+            elif kernel in ['gaussian', 'tophat', 'epanechnikov', 'exponential', 'linear', 'cosine']:
+                samples = samples.T
+                kernel = KernelDensity(kernel=kernel, bandwidth=1.0).fit(samples)
             else:
-                raise NotImplementedError()
-            
+                raise NotImplementedError("Given kernel does not exist")
             kernel_list.append(kernel)
         
-        if kernel=='Gaussian':
+        if kernel=='stats.gaussian_kde':
             self.append_from_scipy_kde(kernel_list, colnames=colnames)
-        
+        else:
+            self.append_from_sklearn_kde(kernel_list, colnames=colnames)
+            
         return     
         
     def __repr__(self): 
@@ -366,11 +402,13 @@ if __name__=="__main__":
     kernel_list = [kernel]
     
     b = uframe()
-    b.append_from_scipy_kde(kernel_list)
-    print(b.sample(n=1))
-    print(b.modal())
+    #b.append_from_scipy_kde(kernel_list)
+    #print(b.sample(n=1))
+    #print(b.modal())
     b.append(new=np.identity(2))
     uframe_i = b.data[1]
     print(type(uframe_i))
     b.append_from_uframe_instance([uframe_i])
+    
+    b.append_from_samples([values], kernel='gaussian')
         
