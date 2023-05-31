@@ -43,10 +43,16 @@ class uframe_instance():
             list of indices which indicates the order in which samples and modal values should be returned.
         """
         if uncertain_obj is not None:
-            assert  type(uncertain_obj) in [scipy.stats._kde.gaussian_kde, sklearn.neighbors._kde.KernelDensity]
+            assert (type(uncertain_obj) in [scipy.stats._kde.gaussian_kde, sklearn.neighbors._kde.KernelDensity,scipy.stats.multivariate_normal] or
+                    issubclass(type(uncertain_obj), scipy.stats.rv_continuous) or 
+                    issubclass(type(uncertain_obj), scipy.stats._multivariate.multi_rv_generic) or
+                    issubclass(type(uncertain_obj), scipy.stats._multivariate.multi_rv_frozen) or 
+                    issubclass(type(uncertain_obj), scipy.stats._distn_infrastructure.rv_continuous_frozen))
+                    
         if certain_data is not None:
             assert type(certain_data) in [np.ndarray,np.array]
             assert len(certain_data) == len(indices[1])
+        
         assert self.__check_indices(uncertain_obj, certain_data, indices)
         
         
@@ -55,7 +61,9 @@ class uframe_instance():
             self.__init_scipy_kde(uncertain_obj)
         if type(uncertain_obj) == sklearn.neighbors._kde.KernelDensity: 
             self.__init_sklearn_kde(uncertain_obj)
-            
+        if (issubclass(type(uncertain_obj), scipy.stats.rv_continuous) or 
+            issubclass(type(uncertain_obj), scipy.stats._distn_infrastructure.rv_continuous_frozen)):
+            self.__init_scipy_rv_c(uncertain_obj)
             
             
         self.certain_data = certain_data 
@@ -64,6 +72,8 @@ class uframe_instance():
         
     
         
+    def ev(self): 
+        return("pending")
         
     def __str__(self):
         return("Data Instance")
@@ -88,6 +98,15 @@ class uframe_instance():
         if self.continuous.get_params()["kernel"] not in ["gaussian", "tophat"]: 
             warnings.warn("The provided KDE does not has an gaussian or tophat kernel, this might result in Errors")
             delattr(self, "sample")
+    
+    def __init_scipy_rv_c(self, rv): 
+        self.continuous = rv 
+        self.name = rv.dist.name
+        self.sample = self.__sample_scipy_rv_c
+        self.modal = self.__modal_scipy_rv_c
+    
+    
+    #modal functions
     def modal(self): 
         if not hasattr(self, "continuous"):
             return self.certain_data
@@ -100,6 +119,12 @@ class uframe_instance():
         opt = scipy.optimize.basinhopping(lambda x: -self.continuous.score_samples(x.reshape(1,-1)), np.zeros(len(self.indices[0])) )
         return opt.x.reshape(1,-1)
     
+    def __modal_scipy_rv_c(self): 
+        opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x), self.continuous.mean())
+        return opt.x.reshape(1,-1)
+                
+
+        
         
     
     #sampling functions
@@ -113,6 +138,8 @@ class uframe_instance():
     def __sample_sklearn_kde(self, n, seed = None) :
         return self.__align(self.continuous.sample(n_samples = n, random_state = seed))
     
+    def __sample_scipy_rv_c(self, n, seed = None) :
+        return self.__align(self.continuous.rvs(size = n, random_state = seed))
     
     
     def __get_len(self, indices): 
@@ -122,7 +149,7 @@ class uframe_instance():
         if len(indices[1])==0: 
             return max(self.indices[0])+1
         
-        return max(max(self.indices[0]),max(self.indices[0])) +1
+        return max(max(self.indices[0]),max(self.indices[1])) +1
     
     def __check_indices(self, uncertain_obj, certain_data, indices):
         assert type(indices) == list
@@ -142,7 +169,12 @@ class uframe_instance():
         
         if type (uncertain_obj) == sklearn.neighbors._kde.KernelDensity:
             return len(indices[0]) == uncertain_obj.n_features_in_
-        
+
+        if (issubclass(type(uncertain_obj), scipy.stats.rv_continuous) or 
+            issubclass(type(uncertain_obj), scipy.stats._distn_infrastructure.rv_continuous_frozen)):
+            return len(indices[0]) == 1
+            
+        return True
     
     def __align(self,uncertain_values): 
 
