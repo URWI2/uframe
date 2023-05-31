@@ -45,6 +45,11 @@ class uframe_instance():
         indices : list
             list of indices which indicates the order in which samples and mode values should be returned.
         """
+        
+        self.certain_data = certain_data 
+        self.indices = indices
+        self.n_vars = self.__get_len(indices)
+        
         if uncertain_obj is not None:
             assert (type(uncertain_obj) in [scipy.stats._kde.gaussian_kde, sklearn.neighbors._kde.KernelDensity,scipy.stats.multivariate_normal] or
                     issubclass(type(uncertain_obj), scipy.stats.rv_continuous) or 
@@ -69,11 +74,6 @@ class uframe_instance():
             issubclass(type(uncertain_obj), scipy.stats._multivariate.multi_rv_generic) or
             issubclass(type(uncertain_obj), scipy.stats._multivariate.multi_rv_frozen) ):
             self.__init_scipy_rv_c(uncertain_obj)
-            
-            
-        self.certain_data = certain_data 
-        self.indices = indices
-        self.n_vars = self.__get_len(indices)
         
     
         
@@ -116,7 +116,7 @@ class uframe_instance():
             return self.certain_data
     
     def __mode_scipy_kde(self): 
-        opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x),np.zeros(self.n_vars) )
+        opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x),np.zeros(len(self.indices[0])) )
         return opt.x.reshape(1,-1)
         
     def __mode_sklearn_kde(self): 
