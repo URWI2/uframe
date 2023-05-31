@@ -4,6 +4,10 @@ uframe_instance class used in uframe to depict a single uncertain data instance.
 """
 import scipy 
 import numpy as np
+import sklearn
+from sklearn.neighbors import KernelDensity
+import warnings
+
 
 class uframe_instance(): 
     """
@@ -39,14 +43,11 @@ class uframe_instance():
             tupel of indices which indicates the order in which samples and modal values should be returned.
         """
         if uncertain_obj is not None:
-            assert  type(uncertain_obj) in [scipy.stats._kde.gaussian_kde]
+            assert  type(uncertain_obj) in [scipy.stats._kde.gaussian_kde, sklearn.neighbors._kde.KernelDensity]
         if certain_data is not None:
             assert type(certain_data) in [np.ndarray,np.array]
             assert len(certain_data) == len(indices[1])
-            
-        assert type(indices) == list
-        assert len(indices) == 2
-        
+        assert self.__check_indices(uncertain_obj, certain_data, indices)
         
         
         
@@ -96,6 +97,25 @@ class uframe_instance():
         
         return max(max(self.indices[0]),max(self.indices[0])) +1
     
+    def __check_indices(self, uncertain_obj, certain_data, indices):
+        assert type(indices) == list
+        assert len(indices) == 2
+        
+        if len(indices[1]) == 0:
+            assert certain_data == None
+        
+        if certain_data == None: 
+            assert len(indices[1]) == 0 
+        
+        if len(indices[0]) == 0 and uncertain_obj == None:
+            return True
+        
+        if type(uncertain_obj) == scipy.stats._kde.gaussian_kde:
+            return len(indices[0]) == uncertain_obj.dataset.shape[0]
+        
+        if type (uncertain_obj) == sklearn.neighbors._kde.KernelDensity:
+            return len(indices[0]) == uncertain_obj.n_features_in_
+        
     
     def __align(self,uncertain_values): 
         
