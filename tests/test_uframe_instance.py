@@ -9,10 +9,15 @@ class Testuframe_insatnce(unittest.TestCase):
         m2 = np.random.normal(scale=0.5, size=200)
         
         kernel = scipy.stats.gaussian_kde(np.vstack([m1,m2]))      
-        
-        
-        instance =  uframe_instance(kernel,None, [0,1,[]])
 
+        instance_0 =  uframe_instance(kernel,np.array([1,1]), [[0,3],[1,2]])
+        instance_1 =  uframe_instance(kernel,None, [[0,1],[]])
+        instance_2 =  uframe_instance(None,np.array([1,1]), [[],[0,1]])
+        
+        for instance in [instance_0,instance_1,instance_2]:
+            instance.mode()
+            instance.sample(1)
+            instance.sample(2)
 
 if __name__ == '__main__':
     unittest.main()
