@@ -11,27 +11,28 @@ import warnings
 
 class uframe_instance(): 
     """
-   A class used to represent an singel uncertain data instance.
-
-   ...
-
-   Attributes
-   ----------
-   continuous : class
-       A class describing the underlying uncertainty.
-   certain_data : np.array 
-       Numpy array of certain values
-   indices : [list,list]
-       associations of indices to continuous and certain data
-
-   Methods
-   -------
-   sample(n = 1, seed = None)
-       Samples n samples from the uncertain instance
-       
-       
-       
-   """
+       A class used to represent an singel uncertain data instance.
+    
+       ...
+    
+       Attributes
+       ----------
+       continuous : class
+           A class describing the underlying uncertainty.
+       certain_data : np.array 
+           Numpy array of certain values
+       indices : [list,list]
+           associations of indices to continuous and certain data
+    
+       Methods
+       -------
+       sample(n = 1, seed = None)
+           Samples n samples from the uncertain instance
+           
+       mode()
+           Uses an optimizer to finde the mode value of this instance
+           
+    """
    
     def __init__(self,uncertain_obj:scipy.stats.gaussian_kde, certain_data:np.array, indices:list[list]): 
         """
@@ -42,7 +43,7 @@ class uframe_instance():
         certain_data 1D np.array
             Certain data instances.
         indices : list
-            list of indices which indicates the order in which samples and modal values should be returned.
+            list of indices which indicates the order in which samples and mode values should be returned.
         """
         if uncertain_obj is not None:
             assert (type(uncertain_obj) in [scipy.stats._kde.gaussian_kde, sklearn.neighbors._kde.KernelDensity,scipy.stats.multivariate_normal] or
@@ -64,7 +65,9 @@ class uframe_instance():
         if type(uncertain_obj) == sklearn.neighbors._kde.KernelDensity: 
             self.__init_sklearn_kde(uncertain_obj)
         if (issubclass(type(uncertain_obj), scipy.stats.rv_continuous) or 
-            issubclass(type(uncertain_obj), scipy.stats._distn_infrastructure.rv_continuous_frozen)):
+            issubclass(type(uncertain_obj), scipy.stats._distn_infrastructure.rv_continuous_frozen)or 
+            issubclass(type(uncertain_obj), scipy.stats._multivariate.multi_rv_generic) or
+            issubclass(type(uncertain_obj), scipy.stats._multivariate.multi_rv_frozen) ):
             self.__init_scipy_rv_c(uncertain_obj)
             
             
@@ -90,12 +93,12 @@ class uframe_instance():
     def __init_scipy_kde(self, kernel):
         self.continuous = kernel
         self.sample = self.__sample_scipy_kde
-        self.modal = self.__modal_scipy_kde
+        self.mode = self.__mode_scipy_kde
         
     def __init_sklearn_kde(self, kernel): 
         self.continuous = kernel
         self.sample = self.__sample_sklearn_kde    
-        self.modal = self.__modal_sklearn_kde
+        self.mode = self.__mode_sklearn_kde
         
         if self.continuous.get_params()["kernel"] not in ["gaussian", "tophat"]: 
             warnings.warn("The provided KDE does not has an gaussian or tophat kernel, this might result in Errors")
@@ -103,12 +106,11 @@ class uframe_instance():
     
     def __init_scipy_rv_c(self, rv): 
         self.continuous = rv 
-        self.name = rv.dist.name
         self.sample = self.__sample_scipy_rv_c
-        self.modal = self.__modal_scipy_rv_c
+        self.mode = self.__mode_scipy_rv_c
     
     
-    #modal functions
+    #mode functions
     def mode(self): 
         if not hasattr(self, "continuous"):
             return self.certain_data
@@ -122,6 +124,12 @@ class uframe_instance():
         return opt.x.reshape(1,-1)
     
     def __mode_scipy_rv_c(self): 
+        if (issubclass(type(self.continuous), scipy.stats._multivariate.multi_rv_generic) or
+            issubclass(type(self.continuous), scipy.stats._multivariate.multi_rv_frozen) ):
+        
+            opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x), self.continuous.mean)
+            return opt.x.reshape(1,-1)
+            
         opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x), self.continuous.mean())
         return opt.x.reshape(1,-1)
               
@@ -155,6 +163,12 @@ class uframe_instance():
         assert type(indices) == list
         assert len(indices) == 2
         
+        
+        comp_indices = [*indices[0], *indices[1]]
+        for i in range(self.__get_len(indices)):
+            assert i in comp_indices
+            
+            
         if len(indices[1]) == 0:
             assert certain_data == None
         
