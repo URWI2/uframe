@@ -93,11 +93,11 @@ class uframe_instance():
         
     def __modal_scipy_kde(self): 
         opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x),np.zeros(self.n_vars) )
-        return opt.x
+        return opt.x.reshape(1,-1)
         
     def __modal_sklearn_kde(self): 
         opt = scipy.optimize.basinhopping(lambda x: -self.continuous.score_samples(x.reshape(1,-1)), np.zeros(len(self.indices[0])) )
-        return opt.x
+        return opt.x.reshape(1,-1)
         
         
     def __init_scipy_kde(self, kernel):
@@ -133,7 +133,7 @@ class uframe_instance():
         if len(indices[1]) == 0:
             assert certain_data == None
         
-        if certain_data == None: 
+        if certain_data is None: 
             assert len(indices[1]) == 0 
         
         if len(indices[0]) == 0 and uncertain_obj == None:
@@ -147,9 +147,9 @@ class uframe_instance():
         
     
     def __align(self,uncertain_values): 
-        
-        ret = np.zeros(self.n_vars)
-        ret[self.indices[0]] = np.array(uncertain_values)
-        ret[self.indices[1]] = self.certain_data
+
+        ret = np.zeros((uncertain_values.shape[0], self.n_vars))
+        ret[:,self.indices[0]] = np.array(uncertain_values)
+        ret[:,self.indices[1]] = self.certain_data
         return ret
     
