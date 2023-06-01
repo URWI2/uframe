@@ -55,7 +55,8 @@ class uframe_instance():
                     issubclass(type(uncertain_obj), scipy.stats.rv_continuous) or 
                     issubclass(type(uncertain_obj), scipy.stats._multivariate.multi_rv_generic) or
                     issubclass(type(uncertain_obj), scipy.stats._multivariate.multi_rv_frozen) or 
-                    issubclass(type(uncertain_obj), scipy.stats._distn_infrastructure.rv_continuous_frozen))
+                    issubclass(type(uncertain_obj), scipy.stats._distn_infrastructure.rv_continuous_frozen) or 
+                    list)
                     
         if certain_data is not None:
             assert type(certain_data) in [np.ndarray,np.array]
@@ -74,7 +75,9 @@ class uframe_instance():
             issubclass(type(uncertain_obj), scipy.stats._multivariate.multi_rv_generic) or
             issubclass(type(uncertain_obj), scipy.stats._multivariate.multi_rv_frozen) ):
             self.__init_scipy_rv_c(uncertain_obj)
-        
+            
+        if type(uncertain_obj) == list: 
+            self.__init_list(uncertain_obj)
     
         
     def ev(self): 
@@ -109,7 +112,17 @@ class uframe_instance():
         self.sample = self.__sample_scipy_rv_c
         self.mode = self.__mode_scipy_rv_c
     
-    
+    def __init_list(self,distributions):
+        
+        assert [(issubclass(type(i), scipy.stats.rv_continuous) or 
+            issubclass(type(i), scipy.stats._distn_infrastructure.rv_continuous_frozen)) for i in distributions]
+        
+        self.continuous = distributions
+        
+        self.sample = self.__sample_dist_list
+        self.mode = self.__mode_dist_list
+        
+        
     #mode functions
     def mode(self): 
         if not hasattr(self, "continuous"):
@@ -133,6 +146,13 @@ class uframe_instance():
         opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x), self.continuous.mean())
         return self.__align(opt.x.reshape(1,-1))
               
+    def __mode_dist_list(self): 
+        
+        opt = [ scipy.optimize.basinhopping(lambda x: -dist.pdf(x), dist.mean()).x for dist in self.continuous]
+        opt = np.array(opt)
+        
+        return self.__align(opt.reshape(1,-1))
+        
         
     
     #sampling functions
@@ -152,6 +172,11 @@ class uframe_instance():
         
         return self.__align(self.continuous.rvs(size = n, random_state = seed))
         
+    def __sample_dist_list(self, n, seed = None):
+        sampels = [dist.rvs(size = n, random_state = seed) for dist in self.continuous]
+        sampels = np.column_stack(sampels)
+        
+        return self.__align(sampels)
     
     def __get_len(self, indices): 
         if len(indices[0])==0: 
