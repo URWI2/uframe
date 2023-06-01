@@ -5,7 +5,6 @@ uframe_instance class used in uframe to depict a single uncertain data instance.
 import scipy 
 import numpy as np
 import sklearn
-from sklearn.neighbors import KernelDensity
 import warnings
 
 
@@ -126,7 +125,7 @@ class uframe_instance():
     #mode functions
     def mode(self): 
         if not hasattr(self, "continuous"):
-            return self.certain_data
+            return self.certain_data.reshape(1,-1)
     
     def __mode_scipy_kde(self): 
         opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x),np.zeros(len(self.indices[0])) )
@@ -158,21 +157,23 @@ class uframe_instance():
     #sampling functions
     def sample(self,n: int = 1, seed: int= None): 
         if not hasattr(self, "continuous"):
-            return self.certain_data
-
-    def __sample_scipy_kde(self, n, seed = None): 
+            return np.repeat(self.certain_data.reshape(1,-1), repeats = n, axis =0)
+        
+        
+        
+    def __sample_scipy_kde(self, n:int = 1, seed = None): 
         return self.__align(self.continuous.resample(n, seed = seed).transpose())
     
-    def __sample_sklearn_kde(self, n, seed = None) :
+    def __sample_sklearn_kde(self, n:int = 1, seed = None) :
         return self.__align(self.continuous.sample(n_samples = n, random_state = seed))
     
-    def __sample_scipy_rv_c(self, n, seed = None) :
+    def __sample_scipy_rv_c(self, n:int = 1, seed = None) :
         if n > 1: 
             return self.__align(self.continuous.rvs(size = n, random_state = seed).reshape(n,len(self.indices[0])))
         
         return self.__align(self.continuous.rvs(size = n, random_state = seed))
         
-    def __sample_dist_list(self, n, seed = None):
+    def __sample_dist_list(self, n:int = 1, seed = None):
         sampels = [dist.rvs(size = n, random_state = seed) for dist in self.continuous]
         sampels = np.column_stack(sampels)
         
