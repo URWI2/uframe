@@ -3,6 +3,7 @@ from uframe_instance import uframe_instance
 import scipy
 from scipy import stats 
 from sklearn.neighbors import KernelDensity
+import sklearn.neighbors 
 
 #make only a private attribute _col_dtype, which is settled automatically
 #check for contradictions with categorical variables, but only add it after we have categorical variables 
@@ -67,42 +68,48 @@ class uframe():
         self.data= []
         self._columns=[]
         self._colnames={}
-        self.rows=[]
+        self._rows=[]
         self._rownames={}
         self.col_dtype=[]
         self._col_dtype={}
         
         return 
     
-    #incomplete 
+    #incomplete, does not work yet
+    #parameter for whether new consists of sampled data 
+    #falls sampled==True, wird new als Liste/ Array von Samples erwartet und versucht, append_from_samples zu callen
     def append(self, new=None, colnames=None, rownames=None):
         
-        print('pending, need to evaluate what data is given to the function')
         
         if type(new)==np.ndarray:
-            self.append_from_numpy(new)
+            self.append_from_numpy(new, colnames)
         
         elif type(new)==scipy.stats._kde.gaussian_kde:
-            self.append_from_scipy_kde([new])
+            self.append_from_scipy_kde([new], colnames)
+            
+        elif type(new)==sklearn.neighbors._kde.KernelDensity:
+            self.append_from_sklearn_kde([new], colnames)
         
         elif type(new)== uframe_instance:
-            self.append_from_uframe_instance([new])
+            self.append_from_uframe_instance([new], colnames)
         
-        #append rownames to data 
-        if rownames is not None:
-            #check rownames for duplicates (also with previously existing rownames)
-            if len(set(self.rows + rownames))!= len(self.rows) + len(rownames):
-                raise ValueError("Duplicates among rownames")
-            if len(rownames)!= len(new):
-                raise ValueError("Number of rownames given does not match number of rows given")
+        elif type(new)==list:
             
-            self.rows = self.rows + rownames
-            self._rownames.update({rownames[i]: len(self.data)-len(new)+i for i in range(len(rownames))})
-        else:
+            print("Enter else case")
             
-            self.rows = self.rows + [*list(range(len(self.data)-len(new), len(self.data)))]
-            self._rownames.update({i:i for i in range(len(self.data)-len(new), len(self.data))})
+            if len(new)==2 and type(list[0])==np.ndarray and type(list[1])==dict:
+                
+                self.append_from_mix_with_distr(list[0], list[1], colnames)
+            
+            if type(new[0])==scipy.stats._kde.gaussian_kde:          
+                self.append_from_scipy_kde(new, colnames)
+            elif type(new[0])==sklearn.neighbors._kde.KernelDensity:
+                self.append_from_sklearn_kde(new, colnames)
+            elif type(new[0])==uframe_instance:
+                self.append_from_uframe_instance(new, colnames)
         
+        self.addRownames(new, rownames)
+       
         return 
     
     #append a numpy array with certain data (2D-array)
@@ -171,7 +178,6 @@ class uframe():
         
         if len(self.columns)>0:
             
-            print("Number of features", kernel_list[0].n_features_in_)
             dimensions = len([kernel.n_features_in_ for kernel in kernel_list if kernel.n_features_in_==len(self.columns)])
             if dimensions!=len(kernel_list):
                 raise ValueError("Dimension of list element does not match dimension of uframe")
@@ -196,11 +202,45 @@ class uframe():
             self.data.append(uframe_instance(uncertain_obj=kernel, certain_data=None,
                                              indices=[[*list(range(kernel.n_features_in_))],[]]))
         
+    #jeder Eintrag von distr_list muss entweder eine multivariate Verteilung über alle Variablen
+    #oder eine Liste unabhängiger Verteilungen, deren Dimensionen aufsummiert die Gesamtdimension ergeben, sein   
+    #ebenfalls noch nicht getestet 
+    def append_from_rv_cont(self, distr_list, colnames=None):
         
+        dimensions_mv = [distr.rvs(size=1).shape[0] for distr in distr_list if type(distr)!=list]
+        dimensions_dlists = [sum([d.rvs(size=1).shape[0] for d in distr]) for distr in distr_list if type(distr)==list]
+        d_list = dimensions_mv + dimensions_dlists
+        if len(self.columns)>0:
+            matches = len([i for i in d_list if i==len(self.columns)])
+            if matches!=len(distr_list):
+                raise ValueError("Dimension of distributions must match uframe dimension")
+        else:
+            matches = len([i for i in d_list if i==d_list[0]])
+            if matches!=len(distr_list):
+                raise ValueError("Distributions in list must have same dimension")
         
+            if colnames is None:
+                self._columns = [*list(range(d_list[0]))]
+                self._colnames = {i:i for i in range(d_list[0])}
+            else:
+                if len(colnames)!= d_list[0]:
+                    raise ValueError("Length of column list does not match dimension of distributions")
+                else:
+                    self._columns = colnames 
+                    self._colnames = {name:i for i,name in enumerate(colnames)}
+                    
+        for i, distr in enumerate(distr_list):
+            self.data.append(uframe_instance(uncertain_obj=distr, certain_data=None,
+                                             indices=[[*list(range(d_list[0]))],[]]))
+                
+        return 
+    
     #assume dictionary with indices of incomplete lines as keys and scipy kdes as values 
     #nan values for uncertain values in array certain 
     #have to add colnames (and possibly rownames as parameters instead of the defaults)
+    #not yet tested 
+    
+    #should work for both scipy and sklearn kernels 
     def append_from_mix_with_distr(self, certain, distr, colnames=None):
 
         assert len(certain)==len(distr)
@@ -224,7 +264,10 @@ class uframe():
         for i in range(len(certain)):
             
             if i in distr.keys():
-                assert len(list(np.where(np.isnan(certain[i]==True))))+ distr[i].d == len(self.columns)
+                if type(distr[i])==scipy.stats._kde.gaussian_kde:
+                    assert len(list(np.where(np.isnan(certain[i]==True))))+ distr[i].d == len(self.columns)
+                elif type(distr[i])==sklearn.neighbors._kde.KernelDensity:
+                    assert len(list(np.where(np.isnan(certain[i]==True)))) + distr[i].n_features_in_ == len(self.columns)
             else:
                 assert len(list(np.where(np.isnan(certain[i]==True)))) == len(self.columns)
           
@@ -234,14 +277,13 @@ class uframe():
                                                         list(np.where(np.isnan(certain[i]==False)))]))
         return 
     
+    
+    def append_from_mix_with_rv_cont(self, certain, distr, colnames=None):
+        return 
+    
+     
     #append from a list of uframe_instance objects
-    #treat case of a single uframe_instance object in the append function 
     def append_from_uframe_instance(self, instances, colnames=None):
-        
-        #check that instances is really a list of uframe objects and has right length
-        #do that in the append function 
-        if len(instances)<1:
-            return 
         
         if len(self.columns)>0:
             
@@ -266,12 +308,10 @@ class uframe():
         
         return 
     
-    #use scipy kde for Gaussian kernel and sklearn kde otherwise 
     #samples: list of length (n_instances) of np.ndarray of shape (dim_samples, n_samples) oder listen von np.arrays (dim_samples,)
     #erstellt kernels und greift auf bereits existierende append-Funktion zurück
-    #bislang nur implementiert für scipy Gaussian kernel 
-    #andere Kernels, welche auf sklearn basieren, folgen 
-    def append_from_samples(self, samples_list, kernel='stats.gaussian_kde', colnames=None):
+    #für scipy Gaussian und alle sklearn Kernels 
+    def append_from_samples(self, samples_list, kernel='stats.gaussian_kde', colnames=None, rownames=None):
         
         if len(samples_list)<1:
             raise ValueError("No samples given")
@@ -282,40 +322,72 @@ class uframe():
             
             if type(samples)==list:
                 samples = np.array(samples).T
-            
-            #dim = samples.shape[0]
-            
+               
             if kernel=='stats.gaussian_kde':
-                kernel = stats.gaussian_kde(values)
+                kde = stats.gaussian_kde(values)
             elif kernel in ['gaussian', 'tophat', 'epanechnikov', 'exponential', 'linear', 'cosine']:
                 samples = samples.T
-                kernel = KernelDensity(kernel=kernel, bandwidth=1.0).fit(samples)
+                kde = KernelDensity(kernel=kernel, bandwidth=1.0).fit(samples)
             else:
                 raise NotImplementedError("Given kernel does not exist")
-            kernel_list.append(kernel)
+            kernel_list.append(kde)
         
         if kernel=='stats.gaussian_kde':
             self.append_from_scipy_kde(kernel_list, colnames=colnames)
         else:
             self.append_from_sklearn_kde(kernel_list, colnames=colnames)
-            
-        return     
         
-    def __repr__(self): 
-
-        return "Object of class uframe"
+        self.addRownames(kernel_list, rownames)
+        return  
     
+#MISSING: APPEND FROM LISTS OF DISTRIBUTIONS OR MIXES WHERE THE CONTINUOUS ELEMENT IS A SCIPY DISTRIBUTION (or list of distributions)
+
+
+
+    def addRownames(self, new, rownames):
+       
+        if rownames is not None:
+            
+            #check rownames for duplicates (also with previously existing rownames)
+            if len(set(self._rows + rownames))!= len(self.rows) + len(rownames):
+                raise ValueError("Duplicates among rownames")
+            if len(rownames)!= len(new):
+                raise ValueError("Number of rownames given does not match number of rows given")
+            
+            self._rows = self._rows + rownames
+            self._rownames.update({rownames[i]: len(self.data)-len(new)+i for i in range(len(rownames))})
+        else:
+            
+            self._rows = self.rows + [*list(range(len(self.data)-len(new), len(self.data)))]
+            self._rownames.update({i:i for i in range(len(self.data)-len(new), len(self.data))})
         
+        return 
+    
+
+    
+    def __repr__(self): 
+        
+        return "Object of class uframe"
+           
     def __str__(self):
         
-        return 'pending'
+        print("Object of class uframe with certain values:")
+        print(self.array_rep())
+        return ""
     
-    #a function where a numpy array with nan for uncertain values is returned 
-
-    #append from samples 
-    #Funktion, welche aus np array durch Löschen und Imputation uframe macht 
+    #returns a np.array with the certain values and nan for uncertain values 
+    #TO DO: COLUMNS AND ROWS GEMÄß DER EINTRÄGE IN ROWS UND COLUMNS AUSGEBEN; NICHT IN GESPEICHERTER FORM 
+    def array_rep(self):
+        
+        x = np.zeros((len(self.data), len(self.columns)), dtype=np.float64)
+        for i, instance in enumerate(self.data):
+            x[i, instance.indices[1]]= instance.certain_data
+            x[i, instance.indices[0]]= np.nan
+        
+        return x
     
-    #also missing: functions for renaming or reordering columns/ rows 
+    #also missing: functions for reordering columns/ rows 
+    #renaming rows is also missing 
     #need consensus how the renaming and reordering of columns/ rows should work 
     
     @property
@@ -325,7 +397,7 @@ class uframe():
     @columns.setter
     def columns(self, new_columns):
         
-        if len(self.columns)>0 and len(new_columns)!=self._columns:
+        if len(self.columns)>0 and len(new_columns)!=len(self._columns):
             raise ValueError("Length of new column list does not match column number of uframe")
         
         if len(set(new_columns))!=len(new_columns):
@@ -333,29 +405,66 @@ class uframe():
             
         #update _colnames dictionary if it is not empty
 
+        new_d={}
         for i, new_name in enumerate(new_columns):
             
-            self._colnames[new_name]= self._colnames.pop(self.columns[i])
+            new_d[new_name]= self._colnames.pop(self.columns[i])
     
+        self._colnames = new_d 
         self._columns = new_columns
         return 
     
+    @property
+    def rows(self):
+        return self._rows
 
-    #function for reordering columns and rows
-    def reorder_columns(self):
-        raise NotImplementedError 
-    
-    
-    def modal(self):
+    #rows always have to be integers so far, probably keep it that way like pandas 
+    @rows.setter
+    def rows(self, new_rows):
         
-        return np.squeeze(np.array([inst.modal() for inst in self.data]), axis=0)
- 
-    #does not work for n>1 yet, see uframe_instance class
-    #may have to change that later
+        if len(self.rows)>0 and len(new_rows)!=len(self._rows):
+            raise ValueError("Length of new row list does not match row number of uframe")
+        
+        if len(set(new_rows))!=len(new_rows):
+            raise ValueError("New row list contains duplicates")
+        
+        #check that all row indices are integers
+        if len([index for index in new_rows if type(index)==int])!=len(new_rows):
+            raise ValueError("Indices of rows have to be integers")
+        
+        new_d = {}
+        for i, new_index in enumerate(new_rows):
+            
+            new_d[new_index]= self._rownames.pop(self.rows[i])
+            #self._rownames[new_index]= self._rownames.pop
+        
+        self._rownames= new_d
+        self._rows = new_rows
+        
+        return 
+            
+    #function for reordering columns and rows
+    #Parameter: Liste mit Teilmenge der Spalten in einer bestimmten Reihenfolge, interpretiere das als
+    #neue Reihenfolge dieser Spalten, i.e., wenn bei Spalten [1,2,4] der Parameter [4,2,1] übergeben wird,
+    #werden diese 3 Spalten so neu angeordnet, der Rest bleibt unverändert
+    #dies wird nur für die Ausgabe in columns gespeichert (passe dann array_rep Funktion entsprechend an)
+    #Frage: wird dann auf Input für append Funktionen entsprechend eingegangen und gemäß
+    #_colnames vertauscht vor dem Speichern? Müsste aus Gründen der Benutzerfreundlichkeit eigentlich so passieren
+    #würde in den append-Funktionen einem geeigneten Umsortieren gemäß self._colnames entsprechen 
+    #noch zu besprechen 
+    def reorder_columns(self):
+        
+        raise NotImplementedError() 
     
+    
+    def mode(self):
+        
+        return np.squeeze(np.array([inst.mode() for inst in self.data]), axis=0)
+ 
+    #füge später noch den seed hinzu 
     def sample(self, n=1, seed = None): 
         
-        return np.squeeze(np.array([inst.sample(n, seed) for inst in self.data]), axis=0)
+        return np.squeeze(np.array([inst.sample(n) for inst in self.data]), axis=0)
         
     def ev(self): 
         print('pending')
@@ -377,11 +486,14 @@ class uframe():
 #takes np array, randomly picks percentage of values unc_percentage and introduces uncertainty there
 #default for imp_technique: Gaussian, which just adds a Gaussian noise to the attributes
 def uframe_from_array(a:np.ndarray, imp_technique = 'mice', unc_percentage=0.1):
+    
     return 
 
 #here: add Gaussian noise of given std to chosen entries 
 #relative=True: multiply std with standard deviation of the column to get the std for a column 
 def uframe_noisy_array(a:np.ndarray, std=0.1, relative=False, unc_percentage = 0.1):
+    
+    
     return 
 
 if __name__=="__main__":
@@ -401,13 +513,17 @@ if __name__=="__main__":
     kernel_list = [kernel]
     
     b = uframe()
-    b.append_from_scipy_kde(kernel_list)
-    #print(b.sample(n=1))
-    #print(b.modal())
+    b.append(kernel_list)
+    print(b.sample(n=8))
+    print(b.mode())
     b.append(new=np.identity(2))
     uframe_i = b.data[1]
     print(type(uframe_i))
-    b.append_from_uframe_instance([uframe_i])
+    b.append([uframe_i])
     
-    b.append_from_samples([values], kernel='gaussian')
-        
+    b.append_from_samples([values, values, values], kernel='tophat')
+    print(len(b.data))
+    b.append(new=kernel_list)
+    b.append([uframe_i])
+    
+    print(len(b.data))
