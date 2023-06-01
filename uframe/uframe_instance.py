@@ -48,6 +48,8 @@ class uframe_instance():
         self.certain_data = certain_data 
         self.indices = indices
         self.n_vars = self.__get_len(indices)
+        self.n_uncertain = 0
+        
         
         if uncertain_obj is not None:
             assert (type(uncertain_obj) in [scipy.stats._kde.gaussian_kde, sklearn.neighbors._kde.KernelDensity,scipy.stats.multivariate_normal] or
@@ -96,11 +98,13 @@ class uframe_instance():
         self.continuous = kernel
         self.sample = self.__sample_scipy_kde
         self.mode = self.__mode_scipy_kde
+        self.n_uncertain = self.continuous.d
         
     def __init_sklearn_kde(self, kernel): 
         self.continuous = kernel
         self.sample = self.__sample_sklearn_kde    
         self.mode = self.__mode_sklearn_kde
+        self.n_uncertain = self.n_uncertain.n_features_in_
         
         if self.continuous.get_params()["kernel"] not in ["gaussian", "tophat"]: 
             warnings.warn("The provided KDE does not has an gaussian or tophat kernel, this might result in Errors")
@@ -110,6 +114,7 @@ class uframe_instance():
         self.continuous = rv 
         self.sample = self.__sample_scipy_rv_c
         self.mode = self.__mode_scipy_rv_c
+        self.n_uncertain = rv.dim if hasattr(rv,"dim") else 1
     
     def __init_list(self,distributions):
         
@@ -117,10 +122,9 @@ class uframe_instance():
             issubclass(type(i), scipy.stats._distn_infrastructure.rv_continuous_frozen)) for i in distributions]
         
         self.continuous = distributions
-        
         self.sample = self.__sample_dist_list
         self.mode = self.__mode_dist_list
-        
+        self.n_uncertain = len(distributions)
         
     #mode functions
     def mode(self): 
