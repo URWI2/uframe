@@ -456,15 +456,19 @@ class uframe():
         
         raise NotImplementedError() 
     
-    
+    #Shape-Problem: bei festen Werten wird array unterschiedlicher Shape zurückgegeben als mit unsicheren
+    #uframe instance Problem 
+    #nicht array aus Liste machen, sondern arrays in Liste concatenaten!
+    #geht erst, wenn die zurückgegebenen array shapes einheitlich sind 
     def mode(self):
         
-        return np.squeeze(np.array([inst.mode() for inst in self.data]), axis=0)
+        return [inst.mode() for inst in self.data]
  
     #füge später noch den seed hinzu 
+    #np.concatenate mit dieser Liste machen, sobald array Dimensionen passen 
     def sample(self, n=1, seed = None): 
         
-        return np.squeeze(np.array([inst.sample(n) for inst in self.data]), axis=0)
+        return [inst.sample(n, seed) for inst in self.data]
         
     def ev(self): 
         print('pending')
@@ -485,6 +489,7 @@ class uframe():
 
 #takes np array, randomly picks percentage of values unc_percentage and introduces uncertainty there
 #default for imp_technique: Gaussian, which just adds a Gaussian noise to the attributes
+#see function generate missing values to in untitled file to select uncertain values 
 def uframe_from_array(a:np.ndarray, imp_technique = 'mice', unc_percentage=0.1):
     
     return 
