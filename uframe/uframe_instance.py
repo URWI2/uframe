@@ -117,21 +117,21 @@ class uframe_instance():
     
     def __mode_scipy_kde(self): 
         opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x),np.zeros(len(self.indices[0])) )
-        return opt.x.reshape(1,-1)
+        return self.__align(opt.x.reshape(1,-1))
         
     def __mode_sklearn_kde(self): 
         opt = scipy.optimize.basinhopping(lambda x: -self.continuous.score_samples(x.reshape(1,-1)), np.zeros(len(self.indices[0])) )
-        return opt.x.reshape(1,-1)
+        return self.__align(opt.x.reshape(1,-1))
     
     def __mode_scipy_rv_c(self): 
         if (issubclass(type(self.continuous), scipy.stats._multivariate.multi_rv_generic) or
             issubclass(type(self.continuous), scipy.stats._multivariate.multi_rv_frozen) ):
         
             opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x), self.continuous.mean)
-            return opt.x.reshape(1,-1)
+            return self.__align(opt.x.reshape(1,-1))
             
         opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x), self.continuous.mean())
-        return opt.x.reshape(1,-1)
+        return self.__align(opt.x.reshape(1,-1))
               
         
     
