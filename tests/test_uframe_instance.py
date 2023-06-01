@@ -70,13 +70,23 @@ class Testuframe_insatnce(unittest.TestCase):
             self.instance_check(instance)
     
     
+
+    def test_dist_list(self): 
+        rv = [scipy.stats.norm(10), scipy.stats.norm(2)]       
         
-        
+        instance_0 =  uframe_instance(rv,np.array([1,1]), [[0,3],[1,2]])
+        instance_1 =  uframe_instance(rv,None, [[0,1],[]])
+        instance_2 =  uframe_instance(None,np.array([1,1]), [[],[0,1]])
+
+        instance = instance_0        
+        for instance in [instance_0,instance_1,instance_2]:
+            self.instance_check(instance)
+          
 
     def instance_check(self,instance): 
         instance.mode()
         instance.sample(1)
-        instance.sample(2)
+        instance.sample(10)
 
     
         
