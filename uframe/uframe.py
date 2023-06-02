@@ -642,9 +642,7 @@ def uframe_from_array_mice(a: np.ndarray, p=0.1, mice_iterations=5, kernel="stat
     
     return u
 
-
-
-# here: add Gaussian noise of given std to chosen entries
+# add Gaussian noise of given std to chosen entries
 # relative=True: multiply std with standard deviation of the column to get the std for a column
 def uframe_noisy_array(a: np.ndarray, std=0.1, relative=False, unc_percentage=0.1):
     
