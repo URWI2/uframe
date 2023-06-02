@@ -33,54 +33,66 @@ class uframe_instance():
            
     """
    
-    def __init__(self,uncertain_obj:scipy.stats.gaussian_kde, certain_data:np.array, indices:list[list]): 
+    def __init__(self, certain_data:np.array = None, continuous= None ,categorical:list[dict] = None, indices:list[list] = None): 
         """
         Parameters
         ----------
-        uncertain_obj : scipy.stats._kde.gaussian_kde | scipy.stats
+        continuous : scipy.stats._kde.gaussian_kde | scipy.stats
             Scipy Kernel Density Estimation or other, that describes the ucnertain Variables of the instance.
         certain_data 1D np.array
             Certain data instances.
+        categorical_uncertainty: list of dictionaries
+            List of dictionaries with each dictionary representing the probability distribution of a categorical variable.
+            
         indices : list
             list of indices which indicates the order in which samples and mode values should be returned.
         """
         
+        certain_data = np.array([]) if certain_data is None else certain_data 
         self.certain_data = certain_data 
+        
         self.indices = indices
-        self.n_vars = self.__get_len(indices)
-        self.n_uncertain = 0
+        self.n_continuous = 0
+        self.n_certain = 0 
+        self.n_categorical = 0
         
-        
-        if uncertain_obj is not None:
-            assert (type(uncertain_obj) in [scipy.stats._kde.gaussian_kde, sklearn.neighbors._kde.KernelDensity,scipy.stats.multivariate_normal] or
-                    issubclass(type(uncertain_obj), scipy.stats.rv_continuous) or 
-                    issubclass(type(uncertain_obj), scipy.stats._multivariate.multi_rv_generic) or
-                    issubclass(type(uncertain_obj), scipy.stats._multivariate.multi_rv_frozen) or 
-                    issubclass(type(uncertain_obj), scipy.stats._distn_infrastructure.rv_continuous_frozen) or 
-                    list)
-                    
+        if continuous is not None:
+            if type(continuous) == scipy.stats._kde.gaussian_kde:
+                self.__init_scipy_kde(continuous)
+            elif type(continuous) == sklearn.neighbors._kde.KernelDensity: 
+                self.__init_sklearn_kde(continuous)
+            elif (issubclass(type(continuous), scipy.stats.rv_continuous) or 
+                issubclass(type(continuous), scipy.stats._distn_infrastructure.rv_continuous_frozen)or 
+                issubclass(type(continuous), scipy.stats._multivariate.multi_rv_generic) or
+                issubclass(type(continuous), scipy.stats._multivariate.multi_rv_frozen) ):
+                self.__init_scipy_rv_c(continuous)
+                
+            elif type(continuous) == list: 
+                self.__init_list(continuous)
+            
+            else: 
+                raise ValueError("Unknown continuous uncertainty object")
+
+            
         if certain_data is not None:
             assert type(certain_data) in [np.ndarray,np.array]
-            assert len(certain_data) == len(indices[1])
-        
-        assert self.__check_indices(uncertain_obj, certain_data, indices)
+            self.n_certain = len(certain_data)
         
         
-        
-        if type(uncertain_obj) == scipy.stats._kde.gaussian_kde:
-            self.__init_scipy_kde(uncertain_obj)
-        if type(uncertain_obj) == sklearn.neighbors._kde.KernelDensity: 
-            self.__init_sklearn_kde(uncertain_obj)
-        if (issubclass(type(uncertain_obj), scipy.stats.rv_continuous) or 
-            issubclass(type(uncertain_obj), scipy.stats._distn_infrastructure.rv_continuous_frozen)or 
-            issubclass(type(uncertain_obj), scipy.stats._multivariate.multi_rv_generic) or
-            issubclass(type(uncertain_obj), scipy.stats._multivariate.multi_rv_frozen) ):
-            self.__init_scipy_rv_c(uncertain_obj)
+        if categorical is not None:
+            self.__init_categorical(categorical)
             
-        if type(uncertain_obj) == list: 
-            self.__init_list(uncertain_obj)
-    
         
+        self.indices = indices
+        if indices is None: 
+            self.indices = [[*range(self.n_certain)],
+                       [*range(self.n_certain,self.n_certain + self.n_continuous)],
+                       [*range(self.n_certain + self.n_continuous, self.n_continuous + self.n_certain + self.n_categorical)]]
+        
+        assert self.__check_indices(continuous, self.certain_data, self.indices)
+        
+    
+    
     def ev(self): 
         return("pending")
         
@@ -91,20 +103,20 @@ class uframe_instance():
         return("Data Instance")
     
     def __len__(self): 
-        return self.n_vars
+        return self.n_categorical + self.n_certain + self.n_continuous
        
     #Initialization functions
     def __init_scipy_kde(self, kernel):
         self.continuous = kernel
-        self.sample = self.__sample_scipy_kde
-        self.mode = self.__mode_scipy_kde
-        self.n_uncertain = self.continuous.d
+        self.sample_continuous = self.__sample_scipy_kde
+        self.__mode_continuous = self.__mode_scipy_kde
+        self.n_continuous = self.continuous.d
         
     def __init_sklearn_kde(self, kernel): 
         self.continuous = kernel
-        self.sample = self.__sample_sklearn_kde    
-        self.mode = self.__mode_sklearn_kde
-        self.n_uncertain = self.n_uncertain.n_features_in_
+        self.sample_continuous = self.__sample_sklearn_kde    
+        self.__mode_continuous = self.__mode_sklearn_kde
+        self.n_continuous = self.continuous.n_features_in_
         
         if self.continuous.get_params()["kernel"] not in ["gaussian", "tophat"]: 
             warnings.warn("The provided KDE does not has an gaussian or tophat kernel, this might result in Errors")
@@ -112,124 +124,146 @@ class uframe_instance():
     
     def __init_scipy_rv_c(self, rv): 
         self.continuous = rv 
-        self.sample = self.__sample_scipy_rv_c
-        self.mode = self.__mode_scipy_rv_c
-        self.n_uncertain = rv.dim if hasattr(rv,"dim") else 1
+        self.sample_continuous = self.__sample_scipy_rv_c
+        self.__mode_continuous = self.__mode_scipy_rv_c
+        self.n_continuous = rv.dim if hasattr(rv,"dim") else 1
     
     def __init_list(self,distributions):
-        
-        assert [(issubclass(type(i), scipy.stats.rv_continuous) or 
-            issubclass(type(i), scipy.stats._distn_infrastructure.rv_continuous_frozen)) for i in distributions]
+        for i in distributions: 
+            assert (issubclass(type(i), scipy.stats.rv_continuous) or 
+                    issubclass(type(i), scipy.stats._distn_infrastructure.rv_continuous_frozen))
         
         self.continuous = distributions
-        self.sample = self.__sample_dist_list
-        self.mode = self.__mode_dist_list
-        self.n_uncertain = len(distributions)
+        self.sample_continuous = self.__sample_dist_list
+        self.__mode_continuous = self.__mode_dist_list
+        self.n_continuous = len(distributions)
+        
+    def __init_categorical(self, categorical): 
+        self.categorical = categorical
+        assert self.__check_categorical()
+        self.n_categorical = len(self.categorical)
+        
+        
         
     #mode functions
     def mode(self): 
-        if not hasattr(self, "continuous"):
-            return self.certain_data.reshape(1,-1)
+        return self.__align(self.__mode_continuous(), self.__mode_categorical())
+    
+    
+    def __mode_continuous(self): 
+        return np.array([])
     
     def __mode_scipy_kde(self): 
-        opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x),np.zeros(len(self.indices[0])) )
-        return self.__align(opt.x.reshape(1,-1))
+        opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x),np.zeros(self.n_continuous))
+        return opt.x.reshape(1,-1)
         
     def __mode_sklearn_kde(self): 
-        opt = scipy.optimize.basinhopping(lambda x: -self.continuous.score_samples(x.reshape(1,-1)), np.zeros(len(self.indices[0])) )
-        return self.__align(opt.x.reshape(1,-1))
+        opt = scipy.optimize.basinhopping(lambda x: -self.continuous.score_samples(x.reshape(1,-1)), np.zeros(self.n_continuous) )
+        return opt.x.reshape(1,-1)
     
     def __mode_scipy_rv_c(self): 
         if (issubclass(type(self.continuous), scipy.stats._multivariate.multi_rv_generic) or
             issubclass(type(self.continuous), scipy.stats._multivariate.multi_rv_frozen) ):
         
             opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x), self.continuous.mean)
-            return self.__align(opt.x.reshape(1,-1))
+            return opt.x.reshape(1,-1)
             
         opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x), self.continuous.mean())
-        return self.__align(opt.x.reshape(1,-1))
+        return opt.x.reshape(1,-1)
               
     def __mode_dist_list(self): 
         
-        opt = [ scipy.optimize.basinhopping(lambda x: -dist.pdf(x), dist.mean()).x for dist in self.continuous]
+        opt = [scipy.optimize.basinhopping(lambda x: -dist.pdf(x), dist.mean()).x for dist in self.continuous]
         opt = np.array(opt)
         
-        return self.__align(opt.reshape(1,-1))
+        return opt.reshape(1,-1)
+    
+    def __mode_categorical(self): 
+        if self.n_categorical == 0:
+            return np.array([])
+        return np.array([np.argmax([*dist.values()]) for dist in self.categorical]).reshape(1,-1)
         
         
     
     #sampling functions
     def sample(self,n: int = 1, seed: int= None): 
-        if not hasattr(self, "continuous"):
-            return np.repeat(self.certain_data.reshape(1,-1), repeats = n, axis =0)
+        
+        return self.__align(self.sample_continuous(n,seed), self.sample_categorical(n,seed),n)
+        
+    def sample_categorical(self,n:int = 1, seed:int = None): 
+        if self.n_categorical == 0:
+            return np.array([])
+        return np.array([self.__sample_categorical_dist(dist,n,seed) for dist in self.categorical]).transpose()
         
         
+    def __sample_categorical_dist(self, dist, n,seed): 
+        return np.random.choice([*range(len(dist.values()))], size = n, p = [*dist.values()])        
+            
+        
+        
+    def sample_continuous(self,n:int =1, seed:int = None): 
+        return np.array([])
         
     def __sample_scipy_kde(self, n:int = 1, seed = None): 
-        return self.__align(self.continuous.resample(n, seed = seed).transpose())
+        return self.continuous.resample(n, seed = seed).transpose()
     
     def __sample_sklearn_kde(self, n:int = 1, seed = None) :
-        return self.__align(self.continuous.sample(n_samples = n, random_state = seed))
-    
+        return self.continuous.sample(n_samples = n, random_state = seed)
+ 
     def __sample_scipy_rv_c(self, n:int = 1, seed = None) :
         if n > 1: 
-            return self.__align(self.continuous.rvs(size = n, random_state = seed).reshape(n,len(self.indices[0])))
+            return self.continuous.rvs(size = n, random_state = seed).reshape(n,self.n_continuous)
         
-        return self.__align(self.continuous.rvs(size = n, random_state = seed))
+        return self.continuous.rvs(size = n, random_state = seed)
         
     def __sample_dist_list(self, n:int = 1, seed = None):
         sampels = [dist.rvs(size = n, random_state = seed) for dist in self.continuous]
-        sampels = np.column_stack(sampels)
-        
-        return self.__align(sampels)
+        return np.column_stack(sampels)
     
-    def __get_len(self, indices): 
-        if len(indices[0])==0: 
-            return max(self.indices[1])+1
-                       
-        if len(indices[1])==0: 
-            return max(self.indices[0])+1
-        
-        return max(max(self.indices[0]),max(self.indices[1])) +1
     
-    def __check_indices(self, uncertain_obj, certain_data, indices):
+    def __check_categorical(self): 
+        for d in self.categorical:
+            assert type(d) == dict 
+        for d in self.categorical:
+            assert sum(d.values()) == 1 
+        
+        return True
+        
+        
+    def __check_indices(self, continuous, certain_data, indices):
         assert type(indices) == list
-        assert len(indices) == 2
+        assert len(indices) == 3
         
         
-        comp_indices = [*indices[0], *indices[1]]
-        for i in range(self.__get_len(indices)):
+        comp_indices = [*indices[0], *indices[1], *indices[2]]
+        for i in range(len(self)):
             assert i in comp_indices
             
             
-        if len(indices[1]) == 0:
-            assert certain_data == None
         
         if certain_data is None: 
-            assert len(indices[1]) == 0 
+            assert len(indices[0]) == 0 
         
-        if len(indices[0]) == 0 and uncertain_obj == None:
+        if len(indices[1]) == 0 and continuous == None:
             return True
         
-        if type(uncertain_obj) == scipy.stats._kde.gaussian_kde:
-            return len(indices[0]) == uncertain_obj.dataset.shape[0]
+        if type(continuous) == scipy.stats._kde.gaussian_kde:
+            return len(indices[1]) == continuous.dataset.shape[0]
         
-        if type (uncertain_obj) == sklearn.neighbors._kde.KernelDensity:
-            return len(indices[0]) == uncertain_obj.n_features_in_
+        if type (continuous) == sklearn.neighbors._kde.KernelDensity:
+            return len(indices[1]) == continuous.n_features_in_
 
-        if (issubclass(type(uncertain_obj), scipy.stats.rv_continuous) or 
-            issubclass(type(uncertain_obj), scipy.stats._distn_infrastructure.rv_continuous_frozen)):
-            return len(indices[0]) == 1
+        if (issubclass(type(continuous), scipy.stats.rv_continuous) or 
+            issubclass(type(continuous), scipy.stats._distn_infrastructure.rv_continuous_frozen)):
+            return len(indices[1]) == 1
             
         return True
     
-    def __align(self,uncertain_values): 
-
-        ret = np.zeros((uncertain_values.shape[0], self.n_vars))
-        ret[:,self.indices[0]] = np.array(uncertain_values)
-        ret[:,self.indices[1]] = self.certain_data
+    def __align(self, u_continuous, u_categorical, n=1): 
+        n = max(n, u_continuous.shape[0], u_categorical.shape[0])
+        ret = np.zeros((n, self.n_certain + self.n_categorical + self.n_continuous))
+        ret[:,self.indices[0]] = self.certain_data
+        ret[:,self.indices[1]] = np.array(u_continuous)
+        ret[:,self.indices[2]] = u_categorical
         return ret
     
-    
-
-
