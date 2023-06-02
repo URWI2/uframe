@@ -5,6 +5,7 @@ from scipy import stats
 from sklearn.neighbors import KernelDensity
 import sklearn.neighbors
 import miceforest as mf 
+import math 
 
 # make only a private attribute _col_dtype, which is settled automatically
 # check for contradictions with categorical variables
@@ -12,11 +13,22 @@ import miceforest as mf
 #in previous append functions without categorical types, a check will be needed for dtypes of columns as well
 #but that can be done properly after everything works and a col_dtype attribute is introduced 
 
-'BEI APPEND MUSS FÜR JEDE INSTANZ GECHECKT WERDEN; OB NICHT EINE STETIGE VERTEILUNG AUF EINE KATEGORIELLE SPALTE KOMMT'
-'BEI NEUEM DATAFRAME MUSS DEFAULT IN ALL DIESEN APPEND FUNKTIONEN STETIG SEIN'
 'BRAUCHE DANN EINE MÖGLICHKEIT; EINE SPALTE MIT NUR SICHEREN INTEGER WERTEN; DIE BISHER STETIG IST; ALS KATEGORIELL ZU'
 'DEFINIEREN'
 'BEI KATEGORISCHEN VERTEILUNGEN WIRD DANN AUF KATEGORIELL GESETZT'
+
+#function for printing col_dtypes: for all columns, use _colnames to get right number and print out dtypes
+#set coltype(columns, types): erlaube Listen oder Spaltennamen und Datentypen zum Setzen
+#bei allen append-Funktionen: checken, ob coltype kompatibel ist, d.h. sichere Daten und stetige/ kat. Verteilungen
+#defaults: continuous für continuous und certain data, categorical für kategoriell 
+'''
+neue append Funktionen: - Liste von kat. Verteilungen
+- Array mit Dict. von Cat. Vert. für fehlende Werte
+- Liste von stetigen Verteilungen mit Liste von kat. Verteilungen und Indexinformationen (evtl. für alle Typen von RV & Kernel anpassen)
+- 4er-Pack: Array, stetiges Dict., kat. Dict, Indexinformationen 
+-Liste gemischter stetiger Verteilungen/ Kerne (i.e., allgemeine Mischung aus append_scipy_kde, sklearn_kde, rv_cont): evtl. 
+
+'''
  
 #abklären, ob Liste aus 1D-Verteilungen und 1D-Kernels erlaubt sein soll, falls ja,
 #assert Teil in mixed append function modifizieren, um diesen Fall auch zu erlauben (Stand jetzt wäre das ein Fehler)
@@ -83,8 +95,7 @@ class uframe():
         self._colnames = {}
         self._rows = []
         self._rownames = {}
-        self.col_dtype = []
-        self._col_dtype = {}
+        self._col_dtype = []
 
         return
 
@@ -152,13 +163,20 @@ class uframe():
 
     # append a numpy array with certain data (2D-array)
     # have yet to treat the col_dtype aspect in all append functions
+    #default col_dtype is continuous, if there are coltypes already, check against them for int values in categorical columns 
     def append_from_numpy(self, new=None, colnames=None):
 
         if len(self.columns) > 0:
+            
+            
             if new.shape[1] != len(self.columns):
                 raise ValueError("New data does not match shape of uframe")
-
+            
             else:
+                categoricals = [i for i in range(len(self.columns)) if self._col_dtype[i]=='categorical']
+                for index in categoricals:
+                    if np.any(new[:,index]-np.floor(new[:,index])):
+                        raise ValueError("Float values in categorical column")
                 for i in range(new.shape[0]):
                     self.data.append(uframe_instance(continuous=None, certain_data=new[i, :],
                                                      indices=[[*list(range(new.shape[1]))], [], []]))
@@ -170,6 +188,7 @@ class uframe():
             if colnames is None:
                 self._columns = [*list(range(new.shape[1]))]
                 self._colnames = {i: i for i in range(0, new.shape[1])}
+                
             else:
                 if len(colnames) != new.shape[1]:
                     raise ValueError(
@@ -178,6 +197,8 @@ class uframe():
                     self._columns = colnames
                     self._colnames = {name: i for i,
                                       name in enumerate(colnames)}
+            
+            self._col_dtype = len(self.columns)*['continuous']
 
         return
 
@@ -190,6 +211,9 @@ class uframe():
             if dimensions != len(kernel_list):
                 raise ValueError(
                     "Dimension of list element does not match dimension of uframe")
+            categoricals = [i for i in range(len(self.columns)) if self._col_dtype[i]=='categorical']
+            if len(categoricals)>0:
+                raise ValueError("Continuous kernel in categorical column")
 
         else:
             # check if all kernels have the same dimension
@@ -209,6 +233,8 @@ class uframe():
                     self._columns = colnames
                     self._colnames = {name: i for i,
                                       name in enumerate(colnames)}
+                    
+            self._col_dtype = len(self.columns)*['continuous']
 
         for i, kernel in enumerate(kernel_list):
             self.data.append(uframe_instance(continuous=kernel, certain_data=None,
@@ -225,6 +251,9 @@ class uframe():
             if dimensions != len(kernel_list):
                 raise ValueError(
                     "Dimension of list element does not match dimension of uframe")
+            categoricals = [i for i in range(len(self.columns)) if self._col_dtype[i]=='categorical']
+            if len(categoricals)>0:
+                raise ValueError("Continuous kernel in categorical column")
 
         else:
             # check if all kernels have the same dimension
@@ -245,6 +274,7 @@ class uframe():
                     self._columns = colnames
                     self._colnames = {name: i for i,
                                       name in enumerate(colnames)}
+            self._col_dtype = len(self.columns)*['continuous']
 
         for i, kernel in enumerate(kernel_list):
             self.data.append(uframe_instance(continuous=kernel, certain_data=None,
@@ -272,6 +302,10 @@ class uframe():
             if matches != len(distr_list):
                 raise ValueError(
                     "Dimension of distributions must match uframe dimension")
+            categoricals = [i for i in range(len(self.columns)) if self._col_dtype[i]=='categorical']
+            if len(categoricals)>0:
+                raise ValueError("Continuous distribution in categorical column")
+            
         else:
             matches = len([i for i in d_list if i == d_list[0]])
             if matches != len(distr_list):
@@ -289,6 +323,7 @@ class uframe():
                     self._columns = colnames
                     self._colnames = {name: i for i,
                                       name in enumerate(colnames)}
+            self._col_dtype = len(self.columns)*['continuous']
 
         #every element of distr list is either a 1D RV, a MV Gaussian or a list of 1D RVs 
         for i, distr in enumerate(distr_list):
@@ -321,6 +356,13 @@ class uframe():
 
             if len(self.columns) != certain.shape[1]:
                 raise ValueError("Dimensions of new data do not match uframe")
+            categoricals = [i for i in range(len(self.columns)) if self._col_dtype[i]=='categorical']
+            for index in categoricals:
+                if np.any(np.isnan(certain[:,index])):
+                    raise ValueError("Continuous distribution in categorical column")
+                certain_values = certain[:,index][np.isnan(certain[:,index]==False)]
+                if np.any(certain_values - np.floor(certain_values)):
+                    raise ValueError("Float values in categorical column")
 
         else:
             if colnames is None:
@@ -334,6 +376,7 @@ class uframe():
                     self._columns = colnames
                     self._colnames = {name: i for i,
                                       name in enumerate(colnames)}
+            self._col_dtype = len(self.columns)*['continuous']
 
         for i in range(len(certain)):
 
@@ -413,7 +456,17 @@ class uframe():
                 [len(instance) for instance in instances if len(instance)== len(self.columns)])
             if dimensions != len(instances):
                 raise ValueError("Dimensions of new instances do not match dimension of uframe")
-
+            categoricals = [i for i in range(len(self.columns)) if self._col_dtype[i]=='categorical']
+            for index in categoricals:
+                #check if that index is continuous or a certain float value in any of the new uframe_instances
+                for instance in instances:
+                    if index in instance.indices[1]:
+                        raise ValueError("Continuous distribution in categorical column")
+                    if index in instance.indices[0]:
+                        certain_value = instance.certain_data[instance.indices[0].index(index)]
+                        if certain_value - math.floor(certain_value) > 0:
+                            raise ValueError("Float value in categorical column")
+                        
         # treat colnames parameter here in else case
         else:
             if colnames is None:
@@ -426,6 +479,7 @@ class uframe():
                     self._columns = colnames
                     self._colnames = {name: i for i,
                                       name in enumerate(colnames)}
+            self._col_dtype = len(self.columns)*['continuous']
 
         self.data = self.data + instances
 
@@ -559,7 +613,45 @@ class uframe():
         self._rows = new_rows
 
         return
+    
+    @property
+    def col_dtype(self):
+        
+        #könnte das hier ändern, sodass es die Reihenfolge gemäß self.columns zurückgibt
+        #noch nicht relevant, aber falls Ändern der Spaltenreihenfolge später möglich ist
+        #nutze dafür dann self._colnames für Zuordnungen 
+        return self._col_dtype 
 
+    #set type of a column, if new type matches the values and distributions in that column 
+    #not tested yet 
+    def set_col_dtype(self, column, col_dtype):
+        
+        if col_dtype not in ['continuous', 'categorical']:
+            raise ValueError("Invalid col_dtype")
+        
+        if column not in self._colnames.keys():
+            raise ValueError("Column does not exist")
+            
+        col_index = self._colnames[column]
+        if self._col_dtypes[col_index]==col_dtype:
+            print("Column already has desired col_dtype")
+            return 
+        if col_dtype=='continuous':
+            for instance in self.data:
+                if col_index in instance.indices[2]:
+                    raise ValueError("Categorical distributions in this column, cannot make it continuous")
+        elif col_dtype=='categorical':
+            for instance in self.data:
+                if col_index in instance.indices[1]:
+                    raise ValueError("Continuous distributions in this column, cannot make it categorical")
+                elif col_index in instance.indices[0]:
+                    certain_value = instance.certain_data[instance.indices[0].index(col_index)]
+                    if certain_value - math.floor(certain_value) > 0:
+                        raise ValueError("Float value in column, cannot make it categorical")
+        self._col_dtype[col_index]= col_dtype
+        
+        return 
+        
     # function for reordering columns and rows
     # Parameter: Liste mit Teilmenge der Spalten in einer bestimmten Reihenfolge, interpretiere das als
     # neue Reihenfolge dieser Spalten, i.e., wenn bei Spalten [1,2,4] der Parameter [4,2,1] übergeben wird,
