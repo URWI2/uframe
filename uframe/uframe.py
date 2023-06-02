@@ -4,6 +4,7 @@ import scipy
 from scipy import stats
 from sklearn.neighbors import KernelDensity
 import sklearn.neighbors
+import miceforest as mf 
 
 # make only a private attribute _col_dtype, which is settled automatically
 # check for contradictions with categorical variables, but only add it after we have categorical variables
@@ -109,6 +110,11 @@ class uframe():
                 
                 self.append_from_mix_with_distr(new[0], new[1], colnames)
 
+            #add a len(new)==3 case here where a dictionary of categorical variables is third
+            #and a 3-part mixed append function is called 
+            #also a case where only a list of dicts for cat. variables is appended
+            #one with two lists (or a list of lists of length 2) with only continuous und categorical variables
+            
             if type(new[0]) == scipy.stats._kde.gaussian_kde:
                 self.append_from_scipy_kde(new, colnames)
             elif type(new[0]) == sklearn.neighbors._kde.KernelDensity:
@@ -298,7 +304,7 @@ class uframe():
 
     # assume dictionary with indices of incomplete lines as keys and scipy kdes as values
     # nan values for uncertain values in array certain
-    #MUSS CHECKEN; OB WIR LEERES ARRAY FÜR CERTAIN DATA IN SPEZIALFALL ÜBERGEBEN KÖNNEN 
+    #NOCH KANN KEIN LEERES ARRAY FÜR CERTAIN DATA ÜBERGEBEN WERDEN; NOCH ZU TUN FÜR CHRISTIAN
     def append_from_mix_with_distr(self, certain, distr, colnames=None):
 
         if len(self.columns) > 0:
@@ -326,20 +332,30 @@ class uframe():
                 # checke hier auch für Liste von 1D RVs (rv_continuous oder RV cont. frozen) oder multidim. RV
                 # oder 1 fehlendes Attribut und 1D RV cont oder cont frozen
                 if type(distr[i]) == scipy.stats._kde.gaussian_kde:
-                    assert len(np.where(np.isnan(certain[i]) == False)[
-                               0]) + distr[i].d == len(self.columns)
+                    print(len(np.where(np.isnan(certain[i]) == False)[0]))
+                    print(distr[i].d)
+                    print("Columns", len(self.columns))
+                    assert len(np.where(np.isnan(certain[i]) == False)[0]) + distr[i].d == len(self.columns)
                 elif type(distr[i]) == sklearn.neighbors._kde.KernelDensity:
-                    assert len(list(np.where(
-                        np.isnan(certain[i]) == False))) + distr[i].n_features_in_ == len(self.columns)
+                    print(len(list(np.where(np.isnan(certain[i]) == False)[0])))
+                    print(distr[i].n_features_in_)
+                    print(len(self.columns))
+                    assert len(list(np.where(np.isnan(certain[i]) == False)[0])) + distr[i].n_features_in_ == len(self.columns)
                 elif type(distr[i]) == list:
                     distr_list = distr[i]
                     # check if every list element is rv continuous or rv continuous frozen
                     print([l for l in distr_list if issubclass(type(l), scipy.stats.rv_continuous)
                                 or issubclass(type(l), scipy.stats._distn_infrastructure.rv_continuous_frozen)])
-                    assert len([l for l in distr_list if issubclass(type(l), scipy.stats.rv_continuous)
-                                or issubclass(type(l), scipy.stats._distn_infrastructure.rv_continuous_frozen)]) == len(distr_list)
+                    assert len([l for l in distr_list if issubclass(type(l), 
+                                                                    scipy.stats.rv_continuous)
+                                or issubclass(type(l), 
+                                              scipy.stats._distn_infrastructure.rv_continuous_frozen)]) == len(distr_list)
+                    #erlaube hier auch kernel, brauche dafür eine zweite Liste
+                    #ist das mit Christian abgeklärt?
+                    ####################################################################################
                     # check if length of list is correct
-                    
+                #FEHLT: LISTE VON KERNELS ERLAUBEN
+                #bislang nur Liste von rv Distributions erlaubt 
                     assert len(list(np.where(np.isnan(certain[i]) == False)[0])) + len(distr[i]) == len(self.columns)
                 elif issubclass(type(distr[i]),
                                 scipy.stats._multivariate.multi_rv_generic) or issubclass(type(distr[i]), 
@@ -556,11 +572,12 @@ class uframe():
  
     def sample(self, n=1, seed=None):
 
-        return np.concatenate([inst.sample(n, seed) for inst in self.data])
+        return np.concatenate([inst.sample(n, seed) for inst in self.data], axis=0)
 
+    #does not work on uframe instance level yet
     def ev(self):
-        print('pending')
-        return
+        
+        return np.concatenate([inst.ev() for inst in self.data], axis=0)
 
     def get_dummies(self):
         print('pending')
@@ -571,12 +588,61 @@ class uframe():
         return self.data[index]
 
 
-# takes np array, randomly picks percentage of values unc_percentage and introduces uncertainty there
-# default for imp_technique: Gaussian, which just adds a Gaussian noise to the attributes
-# see function generate missing values to in untitled file to select uncertain values
-def uframe_from_array(a: np.ndarray, imp_technique='mice', unc_percentage=0.1):
-    print("To do")
-    return
+#takes np array, randomly picks percentage of values p and introduces uncertainty there
+#allow different kernels for the values given by mice, then use the mixed distr append function 
+#allow scipy or sklearn kernels
+#one multidimensional kernel is fitted for each row with missing values  
+def uframe_from_array_mice(a: np.ndarray, p=0.1, mice_iterations=5, kernel="stats.gaussian_kde"):
+    
+    x, missing = generate_missing_values(a,p)
+    
+    distr={}
+    
+    #train mice imputation correctly 
+    kds = mf.ImputationKernel(
+        x,
+        save_all_iterations=True,
+        random_state=100)
+    
+    kds.mice(mice_iterations)
+    for i in range(x.shape[0]):
+        #print("Line", i)
+        imp_distr= None 
+        imp_arrays = []
+        for j in range(x.shape[1]): 
+            if np.isnan(x[i,j]):
+              
+                imp_values=[]
+               
+                for k in range(mice_iterations):
+                    imput_x = kds.complete_data(iteration=k)
+                    imp_values.append(imput_x[i,j])
+                
+                imp_value_arr = np.array(imp_values).reshape((1,mice_iterations))
+                imp_arrays.append(imp_value_arr)
+        
+        if len(imp_arrays)==0:
+            continue
+        imp_array = np.concatenate(imp_arrays, axis=0)
+        #print("Shape of imp_array", imp_array.shape)
+        if kernel=="stats.gaussian_kde":
+            kde = stats.gaussian_kde(imp_array)
+            # print("Dimension of kde", kde.d)       
+        else:
+            imp_array = imp_array.T
+            kde = KernelDensity(kernel=kernel, bandwidth=1.0).fit(imp_array)
+            print("Dimension of kde", kde.n_features_in_)      
+            
+        imp_distr = kde 
+                
+        distr[i]= imp_distr
+    
+    u = uframe()
+    u.append(new=[x, distr])
+    
+    return u
+
+
 
 # here: add Gaussian noise of given std to chosen entries
 # relative=True: multiply std with standard deviation of the column to get the std for a column
@@ -664,7 +730,8 @@ if __name__ == "__main__":
     distr2 = scipy.stats.multivariate_normal()
     #c.append_from_mix_with_distr(certain=c_array, distr={0: kernel2, 1:kernel3})
 
-    c.append(new=[c_array, {0: distr1, 1:kernel}])
+    #have to check if that is supposed to work and fix code accordingly, if so 
+    #c.append(new=[c_array, {0: distr1, 1:[kernel2,kernel2]}])
 
     d = uframe()
     d.append_from_rv_cont([distr1])
@@ -689,6 +756,7 @@ if __name__ == "__main__":
     #mixed mit RV Distributionen 
     #brauche geeignetes 3x3-Array für Test 
     
+    #muss das später mit einer kompletten nan-Zeile testen 
     e = uframe()
     e_array = np.array([[1,np.nan, 3], [np.nan, 2, np.nan], [0, np.nan, np.nan]])
     
@@ -703,7 +771,7 @@ if __name__ == "__main__":
     #noch fehlend: Umstellung zu kategoriellen Variablen und entsprechende Anpassungen 
     #append Funktionen für entsprechende Mischungen (mix-Fall muss dann auch 1D kategorielle gemischt mit 1D RV erlauben)
     #fehlend: columns tauschen - da gibt es noch Dinge zu klären
-    #fehlend:ev
+    #fehlend:ev auf instance Ebene & Anpassungen, dass certain_data=[] erlaubt ist
     #fehlend: OHE, col_dtype Handling 
     #uframe aus np.array mit mice 
     
