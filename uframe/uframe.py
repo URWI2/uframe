@@ -8,8 +8,17 @@ import miceforest as mf
 
 # make only a private attribute _col_dtype, which is settled automatically
 # check for contradictions with categorical variables, but only add it after we have categorical variables
-# not needed for noisy array function
+#each column has to be either categorical or continuous, including and checking that will be important
+#in previous append functions without categorical types, a check will be needed for dtypes of columns as well
+#but that can be done properly after everything works and a col_dtype attribute is introduced 
 
+#WENN DAS LÄUFT; COL-DTYPES UND ENTSPRECHENDE CHECKS EINFÜHREN
+'BEI APPEND MUSS FÜR JEDE INSTANZ GECHECKT WERDEN; OB NICHT EINE STETIGE VERTEILUNG AUF EINE KATEGORIELLE SPALTE KOMMT'
+'BEI NEUEM DATAFRAME MUSS DEFAULT IN ALL DIESEN APPEND FUNKTIONEN STETIG SEIN'
+'BRAUCHE DANN EINE MÖGLICHKEIT; EINE SPALTE MIT NUR SICHEREN INTEGER WERTEN; DIE BISHER STETIG IST; ALS KATEGORIELL ZU'
+'DEFINIEREN'
+'BEI KATEGORISCHEN VERTEILUNGEN WIRD DANN AUF KATEGORIELL GESETZT'
+ 
 
 class uframe():
     """
@@ -150,12 +159,12 @@ class uframe():
 
             else:
                 for i in range(new.shape[0]):
-                    self.data.append(uframe_instance(uncertain_obj=None, certain_data=new[i, :],
-                                                     indices=[[], [*list(range(new.shape[1]))]]))
+                    self.data.append(uframe_instance(continuous=None, certain_data=new[i, :],
+                                                     indices=[[*list(range(new.shape[1]))], [], []]))
         else:
             for i in range(new.shape[0]):
-                self.data.append(uframe_instance(uncertain_obj=None, certain_data=new[i, :], indices=[
-                                 [], [*list(range(new.shape[1]))]]))
+                self.data.append(uframe_instance(continuous=None, certain_data=new[i, :], indices=[
+                                 [*list(range(new.shape[1]))],[],[]]))
 
             if colnames is None:
                 self._columns = [*list(range(new.shape[1]))]
@@ -201,8 +210,8 @@ class uframe():
                                       name in enumerate(colnames)}
 
         for i, kernel in enumerate(kernel_list):
-            self.data.append(uframe_instance(uncertain_obj=kernel, certain_data=None,
-                                             indices=[[*list(range(kernel.d))], []]))
+            self.data.append(uframe_instance(continuous=kernel, certain_data=None,
+                                             indices=[[], [*list(range(kernel.d))], []]))
 
         return
 
@@ -237,8 +246,8 @@ class uframe():
                                       name in enumerate(colnames)}
 
         for i, kernel in enumerate(kernel_list):
-            self.data.append(uframe_instance(uncertain_obj=kernel, certain_data=None,
-                                             indices=[[*list(range(kernel.n_features_in_))], []]))
+            self.data.append(uframe_instance(continuous=kernel, certain_data=None,
+                                             indices=[[],[*list(range(kernel.n_features_in_))], []]))
 
     # jeder Eintrag von distr_list muss entweder eine multivariate Verteilung über alle Variablen
     # oder eine Liste unabhängiger 1D-Verteilungen
@@ -297,8 +306,8 @@ class uframe():
                                 or issubclass(type(l), scipy.stats._distn_infrastructure.rv_continuous_frozen)])
                 assert list_len==len(self.columns)
                 assert len(distr)==len(self.columns)
-            self.data.append(uframe_instance(uncertain_obj=distr, certain_data=None,
-                                             indices=[[*list(range(d_list[0]))], []]))
+            self.data.append(uframe_instance(continuous=distr, certain_data=None,
+                                             indices=[[],[*list(range(d_list[0]))], []]))
 
         return
 
@@ -332,14 +341,14 @@ class uframe():
                 # checke hier auch für Liste von 1D RVs (rv_continuous oder RV cont. frozen) oder multidim. RV
                 # oder 1 fehlendes Attribut und 1D RV cont oder cont frozen
                 if type(distr[i]) == scipy.stats._kde.gaussian_kde:
-                    print(len(np.where(np.isnan(certain[i]) == False)[0]))
-                    print(distr[i].d)
-                    print("Columns", len(self.columns))
+                    # print(len(np.where(np.isnan(certain[i]) == False)[0]))
+                    # print(distr[i].d)
+                    # print("Columns", len(self.columns))
                     assert len(np.where(np.isnan(certain[i]) == False)[0]) + distr[i].d == len(self.columns)
                 elif type(distr[i]) == sklearn.neighbors._kde.KernelDensity:
-                    print(len(list(np.where(np.isnan(certain[i]) == False)[0])))
-                    print(distr[i].n_features_in_)
-                    print(len(self.columns))
+                    # print(len(list(np.where(np.isnan(certain[i]) == False)[0])))
+                    # print(distr[i].n_features_in_)
+                    # print(len(self.columns))
                     assert len(list(np.where(np.isnan(certain[i]) == False)[0])) + distr[i].n_features_in_ == len(self.columns)
                 elif type(distr[i]) == list:
                     distr_list = distr[i]
@@ -380,17 +389,17 @@ class uframe():
 
             #print("Certain data", certain[i][np.isnan(certain[i]) == False])
             if i in distr.keys():
-                self.data.append(uframe_instance(uncertain_obj=distr[i],
+                self.data.append(uframe_instance(continuous=distr[i],
                                              certain_data=certain[i][np.isnan(
                                                  certain[i]) == False],
-                                             indices=[list(np.where(np.isnan(certain[i]) == True)[0]),
-                                                      list(np.where(np.isnan(certain[i]) == False)[0])]))
+                                             indices=[list(np.where(np.isnan(certain[i]) == False)[0]),
+                                                      list(np.where(np.isnan(certain[i]) == True)[0]),[]]))
             else:
-                self.data.append(uframe_instance(uncertain_obj=None,
+                self.data.append(uframe_instance(continuous=None,
                                              certain_data=certain[i][np.isnan(
                                                  certain[i]) == False],
-                                             indices=[list(np.where(np.isnan(certain[i]) == True)[0]),
-                                                      list(np.where(np.isnan(certain[i]) == False)[0])]))
+                                             indices=[list(np.where(np.isnan(certain[i]) == False)[0]),
+                                                      list(np.where(np.isnan(certain[i]) == True)[0]),[]]))
         return
 
  
@@ -400,20 +409,18 @@ class uframe():
         if len(self.columns) > 0:
 
             dimensions = len(
-                [instance.n_vars for instance in instances if instance.n_vars == len(self.columns)])
+                [len(instance) for instance in instances if len(instance)== len(self.columns)])
             if dimensions != len(instances):
-                raise ValueError(
-                    "Dimensions of new instances do not match dimension of uframe")
+                raise ValueError("Dimensions of new instances do not match dimension of uframe")
 
         # treat colnames parameter here in else case
         else:
             if colnames is None:
-                self._columns = [*list(range(instances[0].n_vars))]
-                self._colnames = {i: i for i in range(instances[0].n_vars)}
+                self._columns = [*list(range(len(instances[0])))]
+                self._colnames = {i: i for i in range(len(instances[0]))}
             else:
-                if len(colnames) != instances[0].n_vars:
-                    raise ValueError(
-                        "Length of column list does not match size of value array")
+                if len(colnames) != len(instances[0]):
+                    raise ValueError("Length of column list does not match size of value array")
                 else:
                     self._columns = colnames
                     self._colnames = {name: i for i,
