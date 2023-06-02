@@ -7,18 +7,19 @@ import sklearn.neighbors
 import miceforest as mf 
 
 # make only a private attribute _col_dtype, which is settled automatically
-# check for contradictions with categorical variables, but only add it after we have categorical variables
+# check for contradictions with categorical variables
 #each column has to be either categorical or continuous, including and checking that will be important
 #in previous append functions without categorical types, a check will be needed for dtypes of columns as well
 #but that can be done properly after everything works and a col_dtype attribute is introduced 
 
-#WENN DAS LÄUFT; COL-DTYPES UND ENTSPRECHENDE CHECKS EINFÜHREN
 'BEI APPEND MUSS FÜR JEDE INSTANZ GECHECKT WERDEN; OB NICHT EINE STETIGE VERTEILUNG AUF EINE KATEGORIELLE SPALTE KOMMT'
 'BEI NEUEM DATAFRAME MUSS DEFAULT IN ALL DIESEN APPEND FUNKTIONEN STETIG SEIN'
 'BRAUCHE DANN EINE MÖGLICHKEIT; EINE SPALTE MIT NUR SICHEREN INTEGER WERTEN; DIE BISHER STETIG IST; ALS KATEGORIELL ZU'
 'DEFINIEREN'
 'BEI KATEGORISCHEN VERTEILUNGEN WIRD DANN AUF KATEGORIELL GESETZT'
  
+#abklären, ob Liste aus 1D-Verteilungen und 1D-Kernels erlaubt sein soll, falls ja,
+#assert Teil in mixed append function modifizieren, um diesen Fall auch zu erlauben (Stand jetzt wäre das ein Fehler)
 
 class uframe():
     """
