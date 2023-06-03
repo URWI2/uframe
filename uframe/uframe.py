@@ -99,6 +99,7 @@ class uframe():
 
         return
 
+    #checking for what new represents is not ideal as of now, probably need more checks for wrong values of new 
     def append(self, new=None, colnames=None, rownames=None):
         
         if new is None:
@@ -116,6 +117,10 @@ class uframe():
         elif type(new) == uframe_instance:
             self.append_from_uframe_instance([new], colnames)
         
+        #one categorical distribution 
+        elif type(new)== dict:
+            self.append_from_categorical([new], colnames)
+            
         elif issubclass(type(new), scipy.stats.rv_continuous) or issubclass(type(new), 
                                                         scipy.stats._distn_infrastructure.rv_continuous_frozen):
             self.append_from_rv_cont([new], colnames)
@@ -128,9 +133,13 @@ class uframe():
 
             if len(new) == 2 and type(new[0]) == np.ndarray and type(new[1]) == dict:
 
-                
-                self.append_from_mix_with_distr(new[0], new[1], colnames)
+                #check if dict contains continuous or categorical distributions
+                if type(new[1][list(new[1].keys())[0]]) is list and type(new[1][list(new[1].keys())[0]][0]) is dict:
+                    self.append_with_mixed_categorical(new[0], new[1], colnames)
+                else:
+                    self.append_from_mix_with_distr(new[0], new[1], colnames)
 
+            #brauche hier alternativen Fall wo zweiter Eintrag ein dict mit Listen von dicts für kategorielle Variablen ist 
             #add a len(new)==3 case here where a dictionary of categorical variables is third
             #and a 3-part mixed append function is called 
             #also a case where only a list of dicts for cat. variables is appended
@@ -148,8 +157,12 @@ class uframe():
                                                                           scipy.stats._multivariate.multi_rv_frozen):
                 self.append_from_rv_cont(new, colnames)
             #Fall, wo Liste von Listen von 1D Distribs übergeben wird     
+            #checke, dass hier keine kategorischen Verteilungen übergeben werden 
             elif type(new[0])==list:
-                self.append_from_rv_cont(new, colnames)
+                if len(new[0])>0 and type(new[0][0]) is not dict:
+                    self.append_from_rv_cont(new, colnames)
+                elif len(new[0]>0) and type(new[0][0]) is dict:
+                    self.append_from_categorical(new, colnames)
             
       
         if type(new) is not list:
@@ -201,6 +214,41 @@ class uframe():
             self._col_dtype = len(self.columns)*['continuous']
 
         return
+
+    #distr list: list of list of dicts (1 list of dicts per instance)
+    #check that keys in the dicts are always floats or ints or allow any dict keys as values?
+    #not tested yet 
+    def append_from_categorical(self, distr_list,colnames=None):
+        
+        if len(self.columns)>0:
+            dimensions = len([len(l) for l in distr_list if len(l)==len(self.columns)])
+            if dimensions != len(distr_list):
+                raise ValueError("Dimension of list element does not match dimension of uframe")
+            conts = [i for i in range(len(self.columns)) if self._col_dtype[i]=='continuous']
+            if len(conts)>0:
+                raise ValueError("Categorical distribution in continuous column")
+        else:
+            dimensions = len(len(l) for l in distr_list if len(l)==len(distr_list[0]))
+            if dimensions != len(distr_list):
+                raise ValueError("Distributions in list must have same dimension")
+            
+            if colnames is None:
+                self._columns= [*list(range(len(distr_list[0])))] 
+                self._colnames = {i:i for i in range(len(distr_list[0]))}
+            else:
+                if len(colnames)!= len(distr_list[0]):
+                    raise ValueError("Length of column list does not match dim. of distributions")
+                else:
+                    self._columns = colnames
+                    self._colnames = {name:i for i,name in enumerate(colnames)}
+            self._col_dtype = len(self.columns)*['categorical']
+        
+        for i, distr in enumerate(distr_list):
+            self.data.append(uframe_instance(continuous= None, categorical=distr,
+                                             certain_data=None, 
+                                             indices = [[],[],[*list(range(len(distr)))]]))
+        
+        return 
 
     def append_from_scipy_kde(self, kernel_list, colnames=None):
 
@@ -440,13 +488,69 @@ class uframe():
                                                       list(np.where(np.isnan(certain[i]) == True)[0]),[]]))
             else:
                 self.data.append(uframe_instance(continuous=None,
-                                             certain_data=certain[i][np.isnan(
-                                                 certain[i]) == False],
+                                             certain_data=certain[i,:],
                                              indices=[list(np.where(np.isnan(certain[i]) == False)[0]),
-                                                      list(np.where(np.isnan(certain[i]) == True)[0]),[]]))
+                                                      [],[]]))
         return
 
- 
+    #not tested yet
+    def append_with_mixed_categorical(self, certain ,distr, colnames=None):
+        #certain is an array with missing values indicated by nan values
+        #distr: dict, keys are indices of lines with missing values, values are lists of dicts with categorical distributions for them 
+        
+        if len(self.columns) > 0:
+
+            if len(self.columns) != certain.shape[1]:
+                raise ValueError("Dimensions of new data do not match uframe")
+            conts = [i for i in range(len(self.columns)) if self._col_dtype[i]=='conts']
+            for index in conts:
+                if np.any(np.isnan(certain[:,index])):
+                    raise ValueError("Categorical distribution in continuous column")
+        else:
+            if colnames is None:
+                self._columns = [*list(range(certain.shape[1]))]
+                self._colnames = {i: i for i in range(certain.shape[1])}
+            else:
+                if len(colnames) != certain.shape[1]:
+                    raise ValueError(
+                        "Length of column list does not match size of value array")
+                else:
+                    self._columns = colnames
+                    self._colnames = {name: i for i,
+                                      name in enumerate(colnames)}
+            
+            #col_dtype erfodert zusätzlichen Check hier: sind nicht-ganzzahlige Werte und kat. Verteilungen in derselben Spalte
+            self._col_dtypes = []
+            for col_index in range(len(self.columns)):
+                if np.any(np.isnan(certain[:,col_index])):
+                    certain_values = certain[:,index][np.isnan(certain[:,index]==False)]
+                    if np.any(certain_values - np.floor(certain_values)):
+                        raise ValueError("Float values and categorical distr in same column")
+                    else:
+                        self._col_dtypes.append('categorical')
+                else:
+                    self._col_dtypes.append('continuous')
+        
+        for i in range(len(self.certain)):
+            if i not in distr.keys():
+                assert len(list(np.where(np.isnan(certain[i]) == False)[0])) == len(self.columns)
+                self.data.append(uframe_instance(continuous=None, categorical=None,
+                                             certain_data=certain[i,:],
+                                             indices=[list(np.where(np.isnan(certain[i]) == False)[0]),
+                                                      [],[]]))
+            else:
+                assert len(list(np.where(np.isnan(certain[i])==False)[0])) + len(distr[i]) == len(self.columns)
+                self.data.append(uframe_instance(continuous=None, 
+                                                 categorical = distr[i],
+                                                 certain_data=certain[i][np.isnan(
+                                                     certain[i]) == False],
+                                                 indices=[list(np.where(np.isnan(certain[i]) == False)[0]),[],
+                                                          list(np.where(np.isnan(certain[i]) == True)[0])]))
+        return 
+    
+    #TO BE DONE: FUNCTION WHICH HAS MISSING VALUES IN ARRAY AND MIXED AND CATEGORICAL DISTRIBUTIONS FOR IT 
+    #NEED TO DECIDE HOW TO DO THAT: ONE MIXED DICT WITH INDEX INFO; TWO DICTS AND INDEX INFO? 
+                    
     # append from a list of uframe_instance objects
     def append_from_uframe_instance(self, instances, colnames=None):
 
