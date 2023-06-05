@@ -4,8 +4,10 @@ import scipy
 from scipy import stats
 from sklearn.neighbors import KernelDensity
 import sklearn.neighbors
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 import miceforest as mf
 import math
+from copy import deepcopy 
 
 # make only a private attribute _col_dtype, which is settled automatically
 # check for contradictions with categorical variables
@@ -13,25 +15,19 @@ import math
 # in previous append functions without categorical types, a check will be needed for dtypes of columns as well
 # but that can be done properly after everything works and a col_dtype attribute is introduced
 
-'BRAUCHE DANN EINE MÖGLICHKEIT; EINE SPALTE MIT NUR SICHEREN INTEGER WERTEN; DIE BISHER STETIG IST; ALS KATEGORIELL ZU'
-'DEFINIEREN'
-'BEI KATEGORISCHEN VERTEILUNGEN WIRD DANN AUF KATEGORIELL GESETZT'
-
 # function for printing col_dtypes: for all columns, use _colnames to get right number and print out dtypes
 # set coltype(columns, types): erlaube Listen oder Spaltennamen und Datentypen zum Setzen
-# bei allen append-Funktionen: checken, ob coltype kompatibel ist, d.h. sichere Daten und stetige/ kat. Verteilungen
 # defaults: continuous für continuous und certain data, categorical für kategoriell
 '''
-neue append Funktionen: - Liste von kat. Verteilungen
-- Array mit Dict. von Cat. Vert. für fehlende Werte
+neue append Funktionen: 
 - Liste von stetigen Verteilungen mit Liste von kat. Verteilungen und Indexinformationen (evtl. für alle Typen von RV & Kernel anpassen)
 - 4er-Pack: Array, stetiges Dict., kat. Dict, Indexinformationen
 -Liste gemischter stetiger Verteilungen/ Kerne (i.e., allgemeine Mischung aus append_scipy_kde, sklearn_kde, rv_cont): evtl.
 
 '''
 
-# abklären, ob Liste aus 1D-Verteilungen und 1D-Kernels erlaubt sein soll, falls ja,
-# assert Teil in mixed append function modifizieren, um diesen Fall auch zu erlauben (Stand jetzt wäre das ein Fehler)
+#append Funktion mit Liste von kat., Liste von kernel/ stetig (mehrere Typen) und Indexinformation 
+#append Funktion mit allen 3 Typen gemischt 
 
 
 class uframe():
@@ -107,7 +103,7 @@ class uframe():
             return
 
         if isinstance(new, np.ndarray):
-            self.append_from_numpy(new, colnames)
+            self.append_from_numpy(new, colnames, rownames)
 
         elif isinstance(new, scipy.stats._kde.gaussian_kde):
             self.append_from_scipy_kde([new], colnames)
@@ -131,6 +127,13 @@ class uframe():
             self.append_from_rv_cont([new], colnames)
 
         elif isinstance(new, list):
+            
+            if len(new)==4 and isinstance(new[0], np.array) and isinstance(new[1], dict):
+                try:
+                    self.append_with_mixed_distributions(certain=new[0], continuous=new[1], 
+                                                         categorical=new[2], indices=new[3])
+                except:
+                    raise ValueError("Unsuitable parameter new given")
 
             if len(new) == 2 and isinstance(new[0], np.ndarray) and isinstance(new[1], dict):
 
@@ -140,10 +143,6 @@ class uframe():
                 else:
                     self.append_from_mix_with_distr(new[0], new[1], colnames)
 
-            # brauche hier alternativen Fall wo zweiter Eintrag ein dict mit Listen von dicts für kategorielle Variablen ist
-            # add a len(new)==3 case here where a dictionary of categorical variables is third
-            # and a 3-part mixed append function is called
-            # also a case where only a list of dicts for cat. variables is appended
             # one with two lists (or a list of lists of length 2) with only continuous und categorical variables
 
             if isinstance(new[0], scipy.stats._kde.gaussian_kde):
@@ -162,10 +161,13 @@ class uframe():
             elif isinstance(new[0], list):
                 if len(new[0]) > 0 and not isinstance(new[0][0], dict):
                     self.append_from_rv_cont(new, colnames)
-                elif len(new[0] > 0) and isinstance(new[0][0], dict):
+                elif len(new[0]) > 0 and isinstance(new[0][0], dict):
                     self.append_from_categorical(new, colnames)
 
-        if not isinstance(new, list):
+        #sollte evtl. lieber die rownames in jeder append Funktion gesondert adressieren 
+        if isinstance(new, np.ndarray):
+            return 
+        elif not isinstance(new, list):
             self.addRownames([new], rownames)
         elif isinstance(new[0], np.ndarray):
             self.addRownames(new[0], rownames)
@@ -175,9 +177,7 @@ class uframe():
         return
 
     # append a numpy array with certain data (2D-array)
-    # have yet to treat the col_dtype aspect in all append functions
-    # default col_dtype is continuous, if there are coltypes already, check against them for int values in categorical columns
-    def append_from_numpy(self, new=None, colnames=None):
+    def append_from_numpy(self, new=None, colnames=None, rownames=None):
 
         if len(self.columns) > 0:
 
@@ -211,12 +211,29 @@ class uframe():
                                       name in enumerate(colnames)}
 
             self._col_dtype = len(self.columns) * ['continuous']
+        
+        if rownames is not None:
+
+            # check rownames for duplicates (also with previously existing rownames)
+            if len(set(self._rows + rownames)) != len(self.rows) + len(rownames):
+                raise ValueError("Duplicates among rownames")
+            if len(rownames) != len(new):
+                raise ValueError(
+                    "Number of rownames given does not match number of rows given")
+
+            self._rows = self._rows + rownames
+            self._rownames.update(
+                {rownames[i]: len(self.data) - len(new) + i for i in range(len(rownames))})
+        else:
+
+            self._rows = self.rows + [*list(range(len(self.data) - len(new), len(self.data)))]
+            #print("Rows", self.rows, "updated with", [*list(range(len(self.data) - len(new), len(self.data)))])
+            self._rownames.update({i: i for i in range(
+                len(self.data) - len(new), len(self.data))})
 
         return
 
     # distr list: list of list of dicts (1 list of dicts per instance)
-    # check that keys in the dicts are always floats or ints or allow any dict keys as values?
-    # not tested yet
     def append_from_categorical(self, distr_list, colnames=None):
 
         if len(self.columns) > 0:
@@ -227,7 +244,7 @@ class uframe():
             if len(conts) > 0:
                 raise ValueError("Categorical distribution in continuous column")
         else:
-            dimensions = len(len(l) for l in distr_list if len(l) == len(distr_list[0]))
+            dimensions = len([len(l) for l in distr_list if len(l) == len(distr_list[0])])
             if dimensions != len(distr_list):
                 raise ValueError("Distributions in list must have same dimension")
 
@@ -371,7 +388,6 @@ class uframe():
                                       name in enumerate(colnames)}
             self._col_dtype = len(self.columns) * ['continuous']
 
-        # every element of distr list is either a 1D RV, a MV Gaussian or a list of 1D RVs
         for i, distr in enumerate(distr_list):
 
             if issubclass(type(distr), scipy.stats._distn_infrastructure.rv_continuous_frozen) or issubclass(type(distr),
@@ -395,7 +411,6 @@ class uframe():
 
     # assume dictionary with indices of incomplete lines as keys and scipy kdes as values
     # nan values for uncertain values in array certain
-    # NOCH KANN KEIN LEERES ARRAY FÜR CERTAIN DATA ÜBERGEBEN WERDEN; NOCH ZU TUN FÜR CHRISTIAN
     def append_from_mix_with_distr(self, certain, distr, colnames=None):
 
         if len(self.columns) > 0:
@@ -428,17 +443,12 @@ class uframe():
 
             if i in distr.keys():
 
-                # checke hier auch für Liste von 1D RVs (rv_continuous oder RV cont. frozen) oder multidim. RV
-                # oder 1 fehlendes Attribut und 1D RV cont oder cont frozen
+                
                 if isinstance(distr[i], scipy.stats._kde.gaussian_kde):
-                    # print(len(np.where(np.isnan(certain[i]) == False)[0]))
-                    # print(distr[i].d)
-                    # print("Columns", len(self.columns))
+                  
                     assert len(np.where(np.isnan(certain[i]) == False)[0]) + distr[i].d == len(self.columns)
                 elif isinstance(distr[i], sklearn.neighbors._kde.KernelDensity):
-                    # print(len(list(np.where(np.isnan(certain[i]) == False)[0])))
-                    # print(distr[i].n_features_in_)
-                    # print(len(self.columns))
+                   
                     assert len(list(np.where(np.isnan(certain[i]) == False)[0])) + distr[i].n_features_in_ == len(self.columns)
                 elif isinstance(distr[i], list):
                     distr_list = distr[i]
@@ -449,12 +459,10 @@ class uframe():
                                                                     scipy.stats.rv_continuous)
                                 or issubclass(type(l),
                                               scipy.stats._distn_infrastructure.rv_continuous_frozen)]) == len(distr_list)
-                    # erlaube hier auch kernel, brauche dafür eine zweite Liste
-                    # ist das mit Christian abgeklärt?
-                    ####################################################################################
+                   
                     # check if length of list is correct
-                # FEHLT: LISTE VON KERNELS ERLAUBEN
-                # bislang nur Liste von rv Distributions erlaubt
+             
+                    # bislang nur Liste von rv Distributions erlaubt
                     assert len(list(np.where(np.isnan(certain[i]) == False)[0])) + len(distr[i]) == len(self.columns)
                 elif issubclass(type(distr[i]),
                                 scipy.stats._multivariate.multi_rv_generic) or issubclass(type(distr[i]),
@@ -475,7 +483,7 @@ class uframe():
 
                 assert len(list(np.where(np.isnan(certain[i]) == False)[0])) == len(self.columns)
 
-            # print("Certain data", certain[i][np.isnan(certain[i]) == False])
+            
             if i in distr.keys():
                 self.data.append(uframe_instance(continuous=distr[i],
                                                  certain_data=certain[i][np.isnan(
@@ -489,7 +497,6 @@ class uframe():
                                                           [], []]))
         return
 
-    # not tested yet
     def append_with_mixed_categorical(self, certain, distr, colnames=None):
         # certain is an array with missing values indicated by nan values
         # distr: dict, keys are indices of lines with missing values, values are lists of dicts with categorical distributions for them
@@ -519,7 +526,7 @@ class uframe():
             self._col_dtypes = []
             for col_index in range(len(self.columns)):
                 if np.any(np.isnan(certain[:, col_index])):
-                    certain_values = certain[:, index][np.isnan(certain[:, index] == False)]
+                    certain_values = certain[:, col_index][np.isnan(certain[:, col_index] == False)]
                     if np.any(certain_values - np.floor(certain_values)):
                         raise ValueError("Float values and categorical distr in same column")
                     else:
@@ -527,7 +534,7 @@ class uframe():
                 else:
                     self._col_dtypes.append('continuous')
 
-        for i in range(len(self.certain)):
+        for i in range(len(certain)):
             if i not in distr.keys():
                 assert len(list(np.where(np.isnan(certain[i]) == False)[0])) == len(self.columns)
                 self.data.append(uframe_instance(continuous=None, categorical=None,
@@ -544,8 +551,162 @@ class uframe():
                                                           list(np.where(np.isnan(certain[i]))[0])]))
         return
 
-    # TO BE DONE: FUNCTION WHICH HAS MISSING VALUES IN ARRAY AND MIXED AND CATEGORICAL DISTRIBUTIONS FOR IT
-    # NEED TO DECIDE HOW TO DO THAT: ONE MIXED DICT WITH INDEX INFO; TWO DICTS AND INDEX INFO?
+    #not tested yet 
+    def append_with_mixed_distributions(self, certain, continuous, categorical, indices, colnames=None):
+        
+        # certain is an array with missing values indicated by nan values
+        # continuous: dict, keys are indices of lines with missing values, values are MV distr., kernels or lists of 1D distr.
+        # categorical: dict, keys are indices of lines with missing values, values are lists of dicts with categorical distributions for them
+        # indices: dict, keys are indices of lines with missing values, values are lists of 2 lists, first list are indices of missing values with continuous distr, second with categorical
+        # indices have to match the missing values in certain and the dimensions of the continuous and categorical distr. 
+        
+        if len(self.columns) > 0:
+
+            if len(self.columns) != certain.shape[1]:
+                raise ValueError("Dimensions of new data do not match uframe")
+            conts = [i for i in range(len(self.columns)) if self._col_dtype[i] == 'conts']
+            for index in conts:
+                if np.any(np.isnan(certain[:, index])):
+                    raise ValueError("Categorical distribution in continuous column")
+        else:
+            if colnames is None:
+                self._columns = [*list(range(certain.shape[1]))]
+                self._colnames = {i: i for i in range(certain.shape[1])}
+            else:
+                if len(colnames) != certain.shape[1]:
+                    raise ValueError(
+                        "Length of column list does not match size of value array")
+                else:
+                    self._columns = colnames
+                    self._colnames = {name: i for i,
+                                      name in enumerate(colnames)}
+        
+        self._col_dtypes = []
+        for col_index in range(len(self.columns)):
+            if np.any(np.isnan(certain[:, col_index])):
+                categoricals = [i for i in range(len(certain)) if col_index in indices[i][1]]
+                if len(categoricals)>0:
+                    conts = [i for i in range(len(certain)) if col_index in indices[i][0]]
+                    if len(conts)>0:
+                        raise ValueError("Continuous and categorical distr in same column")
+                        certain_values = certain[:, col_index][np.isnan(certain[:, col_index] == False)]
+                        if np.any(certain_values - np.floor(certain_values)):
+                            raise ValueError("Float values and categorical distr in same column")
+                    self._col_dtypes.append('categorical')
+                else:
+                    self._col_dtypes.append('continuous')
+            else:
+                self._col_dtypes.append('continuous')
+        
+        #only for continuous case
+        for i in range(len(certain)):
+            if i not in continuous.keys():
+                if i not in categorical.keys():
+                    assert len(list(np.where(np.isnan(certain[i]) == False)[0])) == len(self.columns)
+                    self.data.append(uframe_instance(continuous=None, categorical=None,
+                                                 certain_data=certain[i, :],
+                                                 indices=[list(np.where(np.isnan(certain[i]) == False)[0]),
+                                                          [], []]))
+                else:
+                    assert len(list(np.where(np.isnan(certain[i]) == False)[0])) + len(categorical[i]) == len(self.columns)
+                    self.data.append(uframe_instance(continuous=None,
+                                                 categorical=categorical[i],
+                                                 certain_data=certain[i][np.isnan(
+                                                     certain[i]) == False],
+                                                 indices=[list(np.where(np.isnan(certain[i]) == False)[0]), [],
+                                                          list(np.where(np.isnan(certain[i]))[0])]))
+        
+            else:
+                if i not in categorical.keys():
+                    if isinstance(continuous[i], scipy.stats._kde.gaussian_kde):
+                     
+                        assert len(np.where(np.isnan(certain[i]) == False)[0]) + continuous[i].d == len(self.columns)
+                    elif isinstance(continuous[i], sklearn.neighbors._kde.KernelDensity):
+                      
+                        assert len(list(np.where(np.isnan(certain[i]) == False)[0])) + continuous[i].n_features_in_ == len(self.columns)
+                    elif isinstance(continuous[i], list):
+                        distr_list = continuous[i]
+                        # check if every list element is rv continuous or rv continuous frozen
+                      
+                        assert len([l for l in distr_list if issubclass(type(l),
+                                                                        scipy.stats.rv_continuous)
+                                    or issubclass(type(l),
+                                                  scipy.stats._distn_infrastructure.rv_continuous_frozen)]) == len(distr_list)
+                       
+                        # check if length of list is correct
+                        assert len(list(np.where(np.isnan(certain[i]) == False)[0])) + len(continuous[i]) == len(self.columns)
+                    elif issubclass(type(continuous[i]),
+                                    scipy.stats._multivariate.multi_rv_generic) or issubclass(type(continuous[i]),
+                                                                                              scipy.stats._multivariate.multi_rv_frozen):
+
+                        assert len(list(np.where(np.isnan(certain[i]) == False)[0])) + continuous[i].mean.shape[0] == len(self.columns)
+
+                    # check if it is 1D distr (one missing attribute in this row)
+                    elif issubclass(type(continuous[i]),
+                                    scipy.stats.rv_continuous) or issubclass(type(continuous[i]),
+                                                                             scipy.stats._distn_infrastructure.rv_continuous_frozen):
+
+                        assert len(list(np.where(np.isnan(certain[i]) == False)[0])) == len(self.columns) - 1
+                    else:
+                        raise ValueError("Distribution type not supported")
+                    
+                    self.data.append(uframe_instance(continuous=continuous[i],
+                                                     certain_data=certain[i][np.isnan(
+                                                         certain[i]) == False],
+                                                     indices=[list(np.where(np.isnan(certain[i]) == False)[0]),
+                                                              list(np.where(np.isnan(certain[i]))[0]), []]))
+                if i in categorical.keys():
+                    
+                    #check that the missing value indices and the distributions indices match
+                    if set(np.where(np.isnan(certain[i,:]))[0])!=set(indices[i][0]+ indices[i][1]):
+                        raise ValueError("Indices of distributions do not match indices of missing values")
+                    if isinstance(continuous[i], scipy.stats._kde.gaussian_kde):
+                     
+                        assert len(np.where(np.isnan(certain[i]) == False)[0]) 
+                        + continuous[i].d + len(categorical[i])== len(self.columns)
+                    
+                    elif isinstance(continuous[i], sklearn.neighbors._kde.KernelDensity):
+                      
+                        assert len(list(np.where(np.isnan(certain[i]) == False)[0])) 
+                        + continuous[i].n_features_in_ + len(categorical[i]) == len(self.columns)
+                    
+                    elif isinstance(continuous[i], list):
+                        distr_list = continuous[i]
+                        # check if every list element is rv continuous or rv continuous frozen
+                      
+                        assert len([l for l in distr_list if issubclass(type(l),
+                                                                        scipy.stats.rv_continuous)
+                                    or issubclass(type(l),
+                                                  scipy.stats._distn_infrastructure.rv_continuous_frozen)]) == len(distr_list)
+                       
+                        # check if length of list is correct
+                        assert len(list(np.where(np.isnan(certain[i]) == False)[0])) 
+                        + len(continuous[i]) + len(categorical[i]) == len(self.columns)
+                    
+                    elif issubclass(type(continuous[i]),
+                                   scipy.stats._multivariate.multi_rv_generic) or issubclass(type(continuous[i]),
+                                                                                             scipy.stats._multivariate.multi_rv_frozen):
+
+                        assert len(list(np.where(np.isnan(certain[i]) == False)[0])) 
+                        + continuous[i].mean.shape[0] + len(categorical[i]) == len(self.columns)
+                    
+                    elif issubclass(type(continuous[i]),
+                                    scipy.stats.rv_continuous) or issubclass(type(continuous[i]),
+                                                                             scipy.stats._distn_infrastructure.rv_continuous_frozen):
+
+                        assert len(list(np.where(np.isnan(certain[i]) == False)[0])) + len(categorical[i]) == len(self.columns) 
+                    
+                    else:
+                        raise ValueError("Distribution type not supported")
+                    
+                    self.data.append(uframe_instance(continuous=continuous[i],
+                                                     categorical = categorical[i],
+                                                     certain_data=certain[i][np.isnan(
+                                                         certain[i]) == False],
+                                                     indices=[list(np.where(np.isnan(certain[i]) == False)[0]),
+                                                              indices[i][0], indices[i][1]]))
+                               
+        return 
 
     # append from a list of uframe_instance objects
     def append_from_uframe_instance(self, instances, colnames=None):
@@ -634,10 +795,14 @@ class uframe():
         else:
 
             self._rows = self.rows + [*list(range(len(self.data) - len(new), len(self.data)))]
+            print("Rows", self.rows, "updated with", [*list(range(len(self.data) - len(new), len(self.data)))])
             self._rownames.update({i: i for i in range(
                 len(self.data) - len(new), len(self.data))})
 
         return
+    
+    def __len__(self):
+        return len(self.data)
 
     def __repr__(self):
 
@@ -653,8 +818,9 @@ class uframe():
 
         x = np.zeros((len(self.data), len(self.columns)), dtype=np.float64)
         for i, instance in enumerate(self.data):
-            x[i, instance.indices[1]] = instance.certain_data
-            x[i, instance.indices[0]] = np.nan
+            x[i, instance.indices[0]] = instance.certain_data
+            x[i, instance.indices[1]] = np.nan
+            x[i, instance.indices[2]] = np.nan
 
         return x
 
@@ -734,7 +900,7 @@ class uframe():
             raise ValueError("Column does not exist")
 
         col_index = self._colnames[column]
-        if self._col_dtypes[col_index] == col_dtype:
+        if self._col_dtype[col_index] == col_dtype:
             print("Column already has desired col_dtype")
             return
         if col_dtype == 'continuous':
@@ -779,14 +945,41 @@ class uframe():
 
         return np.concatenate([inst.ev() for inst in self.data], axis=0)
 
-    def get_dummies(self):
-        print('pending')
-        return
+    #not tested yet 
+    def get_dummies(self, method='sample', samples_per_distrib=1):
+        
+        #do sampling, ev, modal
+        #then iterate over the columns and for categorical
+        if method=='sample':
+            x = self.sample(samples_per_distrib, None)
+        elif method=='mode':
+            x = self.mode()
+        elif method=='ev':
+            x = self.ev()
+        else:
+            raise ValueError("Need method for treating uncertain values")
+        
+        x_ohe = deepcopy(x)
+        for i in range(x.shape[1]):
+            if self._col_dtype[i]=='categorical':
+                label_encoder = LabelEncoder()
+                integer_encoded = label_encoder.fit_transform(x[:,i])
+                #print(integer_encoded)
+                onehot_encoder = OneHotEncoder(sparse=False)
+                integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
+                onehot_encoded = onehot_encoder.fit_transform(integer_encoded)
+                if i<x.shape[1]-1:
+                    x_ohe = np.concatenate((x[:,:i], onehot_encoded, x[:,(i+1):]), axis=1)
+                else:
+                    x_ohe = np.concatenate((x[:,:i], onehot_encoded), axis=1)
+                
+        return x_ohe 
 
     def __getitem__(self, index):
-        print('pending')
         return self.data[index]
-
+    
+    #TO DO: function which takes i,j and returns element of uframe (need marginal distributions for that)
+    
 
 # takes np array, randomly picks percentage of values p and introduces uncertainty there
 # allow different kernels for the values given by mice, then use the mixed distr append function
@@ -824,10 +1017,10 @@ def uframe_from_array_mice(a: np.ndarray, p=0.1, mice_iterations=5, kernel="stat
         if len(imp_arrays) == 0:
             continue
         imp_array = np.concatenate(imp_arrays, axis=0)
-        # print("Shape of imp_array", imp_array.shape)
+       
         if kernel == "stats.gaussian_kde":
             kde = stats.gaussian_kde(imp_array)
-            # print("Dimension of kde", kde.d)
+           
         else:
             imp_array = imp_array.T
             kde = KernelDensity(kernel=kernel, bandwidth=1.0).fit(imp_array)
@@ -844,8 +1037,6 @@ def uframe_from_array_mice(a: np.ndarray, p=0.1, mice_iterations=5, kernel="stat
 
 # add Gaussian noise of given std to chosen entries
 # relative=True: multiply std with standard deviation of the column to get the std for a column
-
-
 def uframe_noisy_array(a: np.ndarray, std=0.1, relative=False, unc_percentage=0.1):
 
     if relative:
@@ -890,7 +1081,6 @@ def generate_missing_values(complete_data, p):
 
 if __name__ == "__main__":
     a = uframe()
-    # a.append_from_numpy(new=np.identity(3))
 
     def measure(n):
         m1 = np.random.normal(size=n)
@@ -932,8 +1122,6 @@ if __name__ == "__main__":
     distr2 = scipy.stats.multivariate_normal()
     # c.append_from_mix_with_distr(certain=c_array, distr={0: kernel2, 1:kernel3})
 
-    # have to check if that is supposed to work and fix code accordingly, if so
-    # c.append(new=[c_array, {0: distr1, 1:[kernel2,kernel2]}])
 
     d = uframe()
     d.append_from_rv_cont([distr1])
@@ -956,9 +1144,7 @@ if __name__ == "__main__":
     e.append([[distr1, distr1, distr1], mv2])
 
     # mixed mit RV Distributionen
-    # brauche geeignetes 3x3-Array für Test
-
-    # muss das später mit einer kompletten nan-Zeile testen
+    
     e = uframe()
     e_array = np.array([[1, np.nan, 3], [np.nan, 2, np.nan], [0, np.nan, np.nan]])
 
@@ -970,17 +1156,15 @@ if __name__ == "__main__":
     g = uframe()
     g.append_from_rv_cont([distr1])
 
-    # noch fehlend: Umstellung zu kategoriellen Variablen und entsprechende Anpassungen
-    # append Funktionen für entsprechende Mischungen (mix-Fall muss dann auch 1D kategorielle gemischt mit 1D RV erlauben)
     # fehlend: columns tauschen - da gibt es noch Dinge zu klären
-    # fehlend:ev auf instance Ebene & Anpassungen, dass certain_data=[] erlaubt ist
-    # fehlend: OHE, col_dtype Handling
-    # uframe aus np.array mit mice
+    # fehlend: OHE
 
-    # sampling aus u funktioniert aktuell nicht, mit Christian abklären,
-    # die Sample-Funktion benötigt eh ein Update nach categoricals
-    # könnte Problem der eindimensionalen MV sein, MV über manche Zeilen und sonst feste Werte
-    # können wir noch besprechen und klären
-    # auch mode geht hier nicht, Problem besprechen
     a = np.array([[1, 3.6, 4.2], [2.2, 1, 3], [7, 6, 5], [8, 8, 2]])
     u = uframe_noisy_array(a, 0.1, True, 0.3)
+    
+    h = uframe()
+    h.append([[{0: 0.3, 1: 0.4, 2:0.3}], [{0:0.8, 1:0.2}]])
+    
+    h = uframe()
+    a = np.array([[1,2, np.nan], [np.nan, 3, np.nan]])
+    h.append([a, {0: [{0: 0.7, 1:0.3}], 1: [{0:0.3, 1:0.1, 2: 0.6}, {0:0.1, 3: 0.9}]}])
