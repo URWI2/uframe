@@ -718,6 +718,9 @@ class uframe():
 
         return
     
+    def get_row(self, key):
+        return self._rownames[key]
+    
     @property
     def col_dtype(self):
         
