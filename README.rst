@@ -3,18 +3,7 @@ uframe
 ======
 
 
-.. image:: https://img.shields.io/pypi/v/URWI2.svg
-        :target: https://pypi.python.org/pypi/URWI2
-
-.. image:: https://img.shields.io/travis/ChristianAmes/URWI2.svg
-        :target: https://travis-ci.com/ChristianAmes/URWI2
-
-.. image:: https://readthedocs.org/projects/URWI2/badge/?version=latest
-        :target: https://URWI2.readthedocs.io/en/latest/?version=latest
-        :alt: Documentation Status
-
-
-
+[![Tests](https://github.com/URWI2/uframe/actions/workflows/tests.yml/badge.svg)](https://github.com/URWI2/uframe/actions/workflows/tests.yml)
 
 This package provides uframes for working with uncertain data in python.
 
