@@ -6,7 +6,8 @@ import scipy
 import numpy as np
 import sklearn
 import warnings
-
+import numpy.typing as npt
+from typing import Optional, List, Dict
 
 class uframe_instance():
     """
@@ -33,7 +34,7 @@ class uframe_instance():
 
     """
 
-    def __init__(self, certain_data: np.array = None, continuous=None, categorical: list[dict] = None, indices: list[list] = None):
+    def __init__(self, certain_data:  Optional[npt.ArrayLike] = None, continuous=None, categorical: Optional[List[Dict[str, float]]] = None, indices: Optional[List[List[int]]] = None):
         """
         Parameters
         ----------
@@ -176,28 +177,28 @@ class uframe_instance():
         return np.array([np.argmax([*dist.values()]) for dist in self.categorical]).reshape(1, -1)
 
     # sampling functions
-    def sample(self, n: int = 1, seed: int = None):
+    def sample(self, n: int = 1, seed: Optional[int] = None):
 
         return self.__align(self.sample_continuous(n, seed), self.sample_categorical(n, seed), n)
 
-    def sample_categorical(self, n: int = 1, seed: int = None):
+    def sample_categorical(self, n: int = 1, seed: Optional[int] = None):
         if self.n_categorical == 0:
             return np.array([])
         return np.array([self.__sample_categorical_dist(dist, n, seed) for dist in self.categorical]).transpose()
 
-    def __sample_categorical_dist(self, dist, n, seed):
+    def __sample_categorical_dist(self, dist, n, seed: Optional[int] = None):
         return np.random.choice([*range(len(dist.values()))], size=n, p=[*dist.values()])
 
-    def sample_continuous(self, n: int = 1, seed: int = None):
+    def sample_continuous(self, n: int = 1, seed: Optional[int] = None):
         return np.array([])
 
-    def __sample_scipy_kde(self, n: int = 1, seed=None):
+    def __sample_scipy_kde(self, n: int = 1, seed: Optional[int]=None):
         return self.continuous.resample(n, seed=seed).transpose()
 
-    def __sample_sklearn_kde(self, n: int = 1, seed=None):
+    def __sample_sklearn_kde(self, n: int = 1, seed:Optional[int] =None):
         return self.continuous.sample(n_samples=n, random_state=seed)
 
-    def __sample_scipy_rv_c(self, n: int = 1, seed=None):
+    def __sample_scipy_rv_c(self, n: int = 1, seed: Optional[int]=None):
         if n > 1:
             return self.continuous.rvs(size=n, random_state=seed).reshape(n, self.n_continuous)
 
