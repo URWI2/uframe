@@ -48,6 +48,9 @@ def test_certain():
     assert instance_2.sample(1).shape == (1,2)
     assert instance_2.sample(5).shape == (5,2)
 
+ 
+def test_inices(): 
+    
     ind = [*range(10)]
     random.shuffle(ind)
     certain = np.array([*range(10)])
