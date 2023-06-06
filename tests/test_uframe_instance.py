@@ -1,10 +1,11 @@
 import numpy as np 
+from numpy.random import shuffle
 import scipy
 import sklearn
 from sklearn.neighbors import KernelDensity
 from uframe.uframe_instance import uframe_instance
 import pytest
-
+import random
 
 def test_check():
     assert 1 == 1
@@ -47,4 +48,10 @@ def test_certain():
     assert instance_2.sample(1).shape == (1,2)
     assert instance_2.sample(5).shape == (5,2)
 
+    ind = [*range(10)]
+    random.shuffle(ind)
+    certain = np.array([*range(10)])
+    instance = uframe_instance(certain_data = certain , indices = [ind,[],[]])
+    
+    assert (instance.mode() == instance.sample()).all()
  
