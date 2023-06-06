@@ -523,16 +523,19 @@ class uframe():
                                       name in enumerate(colnames)}
 
             # col_dtype erfodert zusätzlichen Check hier: sind nicht-ganzzahlige Werte und kat. Verteilungen in derselben Spalte
-            self._col_dtypes = []
+            self._col_dtype = []
             for col_index in range(len(self.columns)):
                 if np.any(np.isnan(certain[:, col_index])):
+                    print("Col index", col_index)
                     certain_values = certain[:, col_index][np.isnan(certain[:, col_index] == False)]
                     if np.any(certain_values - np.floor(certain_values)):
                         raise ValueError("Float values and categorical distr in same column")
                     else:
-                        self._col_dtypes.append('categorical')
+                        print("Appended categorical")
+                        self._col_dtype.append('categorical')
+                        print("Col dtype", self._col_dtype)
                 else:
-                    self._col_dtypes.append('continuous')
+                    self._col_dtype.append('continuous')
 
         for i in range(len(certain)):
             if i not in distr.keys():
@@ -581,7 +584,7 @@ class uframe():
                     self._colnames = {name: i for i,
                                       name in enumerate(colnames)}
         
-        self._col_dtypes = []
+        self._col_dtype = []
         for col_index in range(len(self.columns)):
             if np.any(np.isnan(certain[:, col_index])):
                 categoricals = [i for i in range(len(certain)) if col_index in indices[i][1]]
@@ -592,11 +595,11 @@ class uframe():
                         certain_values = certain[:, col_index][np.isnan(certain[:, col_index] == False)]
                         if np.any(certain_values - np.floor(certain_values)):
                             raise ValueError("Float values and categorical distr in same column")
-                    self._col_dtypes.append('categorical')
+                    self._col_dtype.append('categorical')
                 else:
-                    self._col_dtypes.append('continuous')
+                    self._col_dtype.append('continuous')
             else:
-                self._col_dtypes.append('continuous')
+                self._col_dtype.append('continuous')
         
         #only for continuous case
         for i in range(len(certain)):
@@ -945,7 +948,8 @@ class uframe():
 
         return np.concatenate([inst.ev() for inst in self.data], axis=0)
 
-    #not tested yet 
+    #performs One Hot Encoding of categorical columns after filling uncertain values by sampling/ mode/ ev
+    #return columns in some way?
     def get_dummies(self, method='sample', samples_per_distrib=1):
         
         #do sampling, ev, modal
@@ -959,19 +963,48 @@ class uframe():
         else:
             raise ValueError("Need method for treating uncertain values")
         
-        x_ohe = deepcopy(x)
+        x_ohe = None 
         for i in range(x.shape[1]):
             if self._col_dtype[i]=='categorical':
+                
+                #brauchen wir hier label encoding überhaupt? Nur ganzzahlige Werte
                 label_encoder = LabelEncoder()
                 integer_encoded = label_encoder.fit_transform(x[:,i])
                 #print(integer_encoded)
-                onehot_encoder = OneHotEncoder(sparse=False)
+                categories = []
+                for j in range(len(self.data)):
+                    if i in self.data[j].indices[0]:
+                        categories.append(self.data[j].certain_data[self.data[j].indices[0].index(i)])
+                    elif i in self.data[j].indices[2]:
+                        print("Keys", [float(key) for key in 
+                                                   self.data[j].categorical[self.data[j].indices[2].index(i)].keys()])
+                        categories = categories + [float(key) for key in 
+                                                   self.data[j].categorical[self.data[j].indices[2].index(i)].keys()]
+                        print("Categories", categories)
+                print("Categories")
+                print("List(set(categories))", list(set(categories)))
+                print("Sorted", list(set(categories)).sort())
+                categories = [np.array(list(set(categories)))]
+                print("Categories", categories)
+                onehot_encoder = OneHotEncoder(sparse=False, categories= categories)
                 integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
                 onehot_encoded = onehot_encoder.fit_transform(integer_encoded)
-                if i<x.shape[1]-1:
-                    x_ohe = np.concatenate((x[:,:i], onehot_encoded, x[:,(i+1):]), axis=1)
+                
+                print("One hot encoded shape", onehot_encoded.shape)
+                if x_ohe is None:
+                    x_ohe = onehot_encoded
                 else:
-                    x_ohe = np.concatenate((x[:,:i], onehot_encoded), axis=1)
+                    x_ohe = np.concatenate((x_ohe, onehot_encoded), axis=1)
+                #concatenating ist noch falsch
+                # if i<x.shape[1]-1:
+                #     x_ohe = np.concatenate((x[:,:i], onehot_encoded, x[:,(i+1):]), axis=1)
+                # else:
+                #     x_ohe = np.concatenate((x[:,:i], onehot_encoded), axis=1)
+            else:
+                if x_ohe is None:
+                    x_ohe = x[:,i].reshape((len(x),1))
+                else:
+                    x_ohe = np.concatenate((x_ohe, x[:,i].reshape((len(x), 1))), axis=1)
                 
         return x_ohe 
 
@@ -1157,7 +1190,7 @@ if __name__ == "__main__":
     g.append_from_rv_cont([distr1])
 
     # fehlend: columns tauschen - da gibt es noch Dinge zu klären
-    # fehlend: OHE
+
 
     a = np.array([[1, 3.6, 4.2], [2.2, 1, 3], [7, 6, 5], [8, 8, 2]])
     u = uframe_noisy_array(a, 0.1, True, 0.3)
@@ -1168,3 +1201,4 @@ if __name__ == "__main__":
     h = uframe()
     a = np.array([[1,2, np.nan], [np.nan, 3, np.nan]])
     h.append([a, {0: [{0: 0.7, 1:0.3}], 1: [{0:0.3, 1:0.1, 2: 0.6}, {0:0.1, 3: 0.9}]}])
+    x_ohe = h.get_dummies()
