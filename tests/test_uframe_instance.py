@@ -1,7 +1,5 @@
 import numpy as np 
-from numpy.random import shuffle
 import scipy
-import sklearn
 from sklearn.neighbors import KernelDensity
 from uframe.uframe_instance import uframe_instance
 import pytest
@@ -24,6 +22,18 @@ def test_check():
         (
             KernelDensity().fit(np.vstack([np.random.normal(size=200),np.random.normal(scale=0.5, size=200)]).transpose()),
             2,10
+        ),
+        (
+            scipy.stats.gamma(2),
+            1,7
+        ),
+        (
+            [scipy.stats.norm(10), scipy.stats.norm(2)],
+            2,11
+        ),
+        (
+            scipy.stats.multivariate_normal([0.5, -0.2], [[2.0, 0.3], [0.3, 0.5]]),
+            2,5
         )
     )
 )

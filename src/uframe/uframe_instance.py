@@ -243,7 +243,7 @@ class uframe_instance():
         return True
 
     def __align(self, u_continuous, u_categorical, n=1):
-        n = max(n, u_continuous.shape[0], u_categorical.shape[0])
+    
         ret = np.zeros((n, self.n_certain + self.n_categorical + self.n_continuous))
         ret[:, self.indices[0]] = self.certain_data
         ret[:, self.indices[1]] = np.array(u_continuous)
