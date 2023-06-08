@@ -1,6 +1,7 @@
 # uframe: Python uncertain data handling toolkit
 [![Tests](https://github.com/URWI2/uframe/actions/workflows/tests.yml/badge.svg)](https://github.com/URWI2/uframe/actions/workflows/tests.yml)
 [![PyPI Latest Release](https://img.shields.io/pypi/v/uframe.svg)](https://pypi.org/project/uframe/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## What is it?
 
