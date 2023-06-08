@@ -11,7 +11,7 @@ jobs:
     - name: Install requirements
       run: pip install -r requirements_dev.txt
     - name: Run tests and collect coverage
-      run: pytest --cov=src\uframe tests\
+      run: python -m pytest 
     - name: Upload coverage reports to Codecov
       run: |
         # Replace `linux` below with the appropriate OS
