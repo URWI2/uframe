@@ -2,6 +2,7 @@
 [![Tests](https://github.com/URWI2/uframe/actions/workflows/tests.yml/badge.svg)](https://github.com/URWI2/uframe/actions/workflows/tests.yml)
 [![PyPI Latest Release](https://img.shields.io/pypi/v/uframe.svg)](https://pypi.org/project/uframe/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![codecov](https://codecov.io/gh/URWI2/uframe/branch/main/graph/badge.svg?token=BQJ6FYZIWR)](https://codecov.io/gh/URWI2/uframe)
 
 ## What is it?
 
