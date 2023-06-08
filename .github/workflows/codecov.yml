@@ -5,13 +5,13 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: Test python API
+    name: Test coveragde
     steps:
     - uses: actions/checkout@v1
     - name: Install requirements
       run: pip install -r requirements_dev.txt
     - name: Run tests and collect coverage
-      run: pytest --cov=src tests\
+      run: pytest --cov=src\uframe tests\
     - name: Upload coverage reports to Codecov
       run: |
         # Replace `linux` below with the appropriate OS
