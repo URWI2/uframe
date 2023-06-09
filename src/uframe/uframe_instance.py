@@ -247,6 +247,50 @@ class uframe_instance():
 
         return True
 
+
+    def pdf(self, k): 
+        if type(k) == list: 
+            k = np.array(k)
+        
+        k = k.reshape([-1,self.__len__()])
+        ret = np.array([self.pdf_elementwise(elem) for elem in k])
+        
+        return ret.reshape(-1, 1)
+    
+    
+    def pdf_elementwise(self,k): 
+        cat = self.pdf_categorical(k[self.indices[2]])
+        cont = self.pdf_continuous(k[self.indices[1]])
+        
+        return np.prod([*cat,*cont])
+        
+    def pdf_categorical(self,k): 
+        
+        if self.n_categorical == 0:
+            return np.array([1,1])
+        return np.prod([np.max([*dist.values()]) for dist in self.categorical]).reshape(1, -1)
+
+    def pdf_continuous(self,k):
+        if self.n_continuous == 0: 
+            return np.array([1,1])
+        
+        if isinstance(self.continuous, scipy.stats._kde.gaussian_kde):
+            return self.continuous.pdf(k)
+        
+        if isinstance(self.continuous, sklearn.neighbors._kde.KernelDensity):
+            return np.exp(self.continuous.score_samples(k))
+            
+        if (issubclass(type(self.continuous), scipy.stats.rv_continuous) or
+              issubclass(type(self.continuous), scipy.stats._distn_infrastructure.rv_continuous_frozen) or
+              issubclass(type(self.continuous), scipy.stats._multivariate.multi_rv_generic) or
+              issubclass(type(self.continuous), scipy.stats._multivariate.multi_rv_frozen)):
+            return self.continuous.pdf(k)
+        
+        if isinstance(self.continuous, list):
+            return [self.continuous[i].pdf(k[i]) for i in range(self.n_continuous)]
+        
+        raise ValueError("Unknown continuous uncertainty object")
+        
     def __align(self, u_continuous, u_categorical, n=1):
 
         ret = np.zeros((n, self.n_certain + self.n_categorical + self.n_continuous))
