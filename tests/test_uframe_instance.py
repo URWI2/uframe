@@ -59,7 +59,7 @@ def test_certain():
     assert instance_2.sample(5).shape == (5,2)
 
  
-def test_inices(): 
+def test_indices(): 
     
     ind = [*range(10)]
     random.shuffle(ind)
@@ -68,3 +68,29 @@ def test_inices():
     
     assert (instance.mode() == instance.sample()).all()
  
+@pytest.mark.parametrize(
+     ('cat', 'shape'),
+     (
+         (
+             None,
+             0
+         ),(
+             [{"a":0.1, "b":0.9}],
+             1
+         ),(
+             [{"a":0.1, "b":0.9}, {"a":0.6, "d":0.4}],
+             2
+         ),
+         
+     )
+ )
+   
+def test_categorical(cat,shape):
+    instance = uframe_instance(certain_data=np.array([1,1]), categorical = cat)
+    
+    assert instance.mode().shape == (1,2+shape)
+    assert instance.sample(1).shape == (1,2+shape)
+    assert instance.sample(3).shape == (3,2+shape)
+    
+     
+     
