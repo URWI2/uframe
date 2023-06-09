@@ -9,6 +9,7 @@ import warnings
 import numpy.typing as npt
 from typing import Optional, List, Dict
 
+
 class uframe_instance():
     """
        A class used to represent an singel uncertain data instance.
@@ -34,7 +35,8 @@ class uframe_instance():
 
     """
 
-    def __init__(self, certain_data:  Optional[npt.ArrayLike] = None, continuous=None, categorical: Optional[List[Dict[str, float]]] = None, indices: Optional[List[List[int]]] = None):
+    def __init__(self, certain_data: Optional[npt.ArrayLike] = None, continuous=None,
+                 categorical: Optional[List[Dict[str, float]]] = None, indices: Optional[List[List[int]]] = None):
         """
         Parameters
         ----------
@@ -88,9 +90,6 @@ class uframe_instance():
                             [*range(self.n_certain + self.n_continuous, self.n_continuous + self.n_certain + self.n_categorical)]]
 
         assert self.__check_indices(continuous, self.certain_data, self.indices)
-
-    def ev(self):
-        return ("pending")
 
     def __str__(self):
         return ("Uncertain data instance")
@@ -192,13 +191,13 @@ class uframe_instance():
     def sample_continuous(self, n: int = 1, seed: Optional[int] = None):
         return np.array([])
 
-    def __sample_scipy_kde(self, n: int = 1, seed: Optional[int]=None):
+    def __sample_scipy_kde(self, n: int = 1, seed: Optional[int] = None):
         return self.continuous.resample(n, seed=seed).transpose()
 
-    def __sample_sklearn_kde(self, n: int = 1, seed:Optional[int] =None):
+    def __sample_sklearn_kde(self, n: int = 1, seed: Optional[int] = None):
         return self.continuous.sample(n_samples=n, random_state=seed)
 
-    def __sample_scipy_rv_c(self, n: int = 1, seed: Optional[int]=None):
+    def __sample_scipy_rv_c(self, n: int = 1, seed: Optional[int] = None):
         if n > 1:
             return self.continuous.rvs(size=n, random_state=seed).reshape(n, self.n_continuous)
 
@@ -207,6 +206,12 @@ class uframe_instance():
     def __sample_dist_list(self, n: int = 1, seed=None):
         sampels = [dist.rvs(size=n, random_state=seed) for dist in self.continuous]
         return np.column_stack(sampels)
+
+    def ev(self, n: Optional[int] = 50, seed: Optional[int] = None):
+
+        continuous = (self.__align(self.sample_continuous(n, seed))).mean()
+
+        return continuous
 
     def __check_categorical(self):
         for d in self.categorical:
@@ -243,7 +248,7 @@ class uframe_instance():
         return True
 
     def __align(self, u_continuous, u_categorical, n=1):
-        n = max(n, u_continuous.shape[0], u_categorical.shape[0])
+
         ret = np.zeros((n, self.n_certain + self.n_categorical + self.n_continuous))
         ret[:, self.indices[0]] = self.certain_data
         ret[:, self.indices[1]] = np.array(u_continuous)

@@ -1,10 +1,9 @@
 import numpy as np 
 import scipy
-import sklearn
 from sklearn.neighbors import KernelDensity
-from uframe.uframe_instance import uframe_instance
+from src.uframe.uframe_instance import uframe_instance
 import pytest
-
+import random
 
 def test_check():
     assert 1 == 1
@@ -23,6 +22,18 @@ def test_check():
         (
             KernelDensity().fit(np.vstack([np.random.normal(size=200),np.random.normal(scale=0.5, size=200)]).transpose()),
             2,10
+        ),
+        (
+            scipy.stats.gamma(2),
+            1,7
+        ),
+        (
+            [scipy.stats.norm(10), scipy.stats.norm(2)],
+            2,11
+        ),
+        (
+            scipy.stats.multivariate_normal([0.5, -0.2], [[2.0, 0.3], [0.3, 0.5]]),
+            2,5
         )
     )
 )
@@ -47,4 +58,13 @@ def test_certain():
     assert instance_2.sample(1).shape == (1,2)
     assert instance_2.sample(5).shape == (5,2)
 
+ 
+def test_inices(): 
+    
+    ind = [*range(10)]
+    random.shuffle(ind)
+    certain = np.array([*range(10)])
+    instance = uframe_instance(certain_data = certain , indices = [ind,[],[]])
+    
+    assert (instance.mode() == instance.sample()).all()
  
