@@ -194,6 +194,7 @@ class uframe():
                                                      indices=[[*list(range(new.shape[1]))], [], []]))
         else:
             for i in range(new.shape[0]):
+                #print("Append line", i)
                 self.data.append(uframe_instance(continuous=None, certain_data=new[i, :], indices=[
                                  [*list(range(new.shape[1]))], [], []]))
 
@@ -798,7 +799,7 @@ class uframe():
         else:
 
             self._rows = self.rows + [*list(range(len(self.data) - len(new), len(self.data)))]
-            print("Rows", self.rows, "updated with", [*list(range(len(self.data) - len(new), len(self.data)))])
+            # print("Rows", self.rows, "updated with", [*list(range(len(self.data) - len(new), len(self.data)))])
             self._rownames.update({i: i for i in range(
                 len(self.data) - len(new), len(self.data))})
 
@@ -976,30 +977,26 @@ class uframe():
                     if i in self.data[j].indices[0]:
                         categories.append(self.data[j].certain_data[self.data[j].indices[0].index(i)])
                     elif i in self.data[j].indices[2]:
-                        print("Keys", [float(key) for key in 
-                                                   self.data[j].categorical[self.data[j].indices[2].index(i)].keys()])
+                        #print("Keys", [float(key) for key in 
+                                      #             self.data[j].categorical[self.data[j].indices[2].index(i)].keys()])
                         categories = categories + [float(key) for key in 
                                                    self.data[j].categorical[self.data[j].indices[2].index(i)].keys()]
-                        print("Categories", categories)
-                print("Categories")
-                print("List(set(categories))", list(set(categories)))
-                print("Sorted", list(set(categories)).sort())
+                        #print("Categories", categories)
+                # print("Categories")
+                # print("List(set(categories))", list(set(categories)))
+                # print("Sorted", list(set(categories)).sort())
                 categories = [np.array(list(set(categories)))]
-                print("Categories", categories)
+                # print("Categories", categories)
                 onehot_encoder = OneHotEncoder(sparse=False, categories= categories)
                 integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
                 onehot_encoded = onehot_encoder.fit_transform(integer_encoded)
                 
-                print("One hot encoded shape", onehot_encoded.shape)
+                # print("One hot encoded shape", onehot_encoded.shape)
                 if x_ohe is None:
                     x_ohe = onehot_encoded
                 else:
                     x_ohe = np.concatenate((x_ohe, onehot_encoded), axis=1)
-                #concatenating ist noch falsch
-                # if i<x.shape[1]-1:
-                #     x_ohe = np.concatenate((x[:,:i], onehot_encoded, x[:,(i+1):]), axis=1)
-                # else:
-                #     x_ohe = np.concatenate((x[:,:i], onehot_encoded), axis=1)
+               
             else:
                 if x_ohe is None:
                     x_ohe = x[:,i].reshape((len(x),1))
@@ -1057,7 +1054,7 @@ def uframe_from_array_mice(a: np.ndarray, p=0.1, mice_iterations=5, kernel="stat
         else:
             imp_array = imp_array.T
             kde = KernelDensity(kernel=kernel, bandwidth=1.0).fit(imp_array)
-            print("Dimension of kde", kde.n_features_in_)
+            #print("Dimension of kde", kde.n_features_in_)
 
         imp_distr = kde
 
@@ -1107,7 +1104,7 @@ def generate_missing_values(complete_data, p):
     shape = complete_data.shape
     y = complete_data.copy()
     missing = np.random.binomial(1, p, shape)
-    print(missing)
+    
     y[missing.astype('bool')] = np.nan
     return y, missing
 
