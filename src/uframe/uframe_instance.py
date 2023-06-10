@@ -212,9 +212,11 @@ class uframe_instance():
 
     def ev(self, n: Optional[int] = 50, seed: Optional[int] = None):
 
-        continuous = (self.__align(self.sample_continuous(n, seed))).mean()
+        if hasattr(self,"__ev"):
+            return self.__ev
 
-        return continuous
+        self.__ev = (self.sample(n, seed)).mean(axis=0)
+        return self.__ev
 
     def __check_categorical(self):
         for d in self.categorical:
