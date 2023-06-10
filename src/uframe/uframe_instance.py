@@ -216,6 +216,10 @@ class uframe_instance():
             return self.__ev
 
         self.__ev = (self.sample(n, seed)).mean(axis=0)
+        if self.n_categorical >0: 
+            self.__ev[self.indices[2]] = None
+            self.__ev = [self.__ev, self.categorical]
+        
         return self.__ev
 
     def __check_categorical(self):
