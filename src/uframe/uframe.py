@@ -4,7 +4,7 @@ import scipy
 from scipy import stats
 from sklearn.neighbors import KernelDensity
 import sklearn.neighbors
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder, MinMaxScaler
 import miceforest as mf
 import math
 from copy import deepcopy
@@ -1010,7 +1010,8 @@ class uframe():
 # allow different kernels for the values given by mice, then use the mixed distr append function
 # allow scipy or sklearn kernels
 # one multidimensional kernel is fitted for each row with missing values
-def uframe_from_array_mice(a: np.ndarray, p=0.1, mice_iterations=5, kernel="stats.gaussian_kde"):
+def uframe_from_array_mice(a: np.ndarray, p=0.1, mice_iterations=5, kernel="stats.gaussian_kde",
+                           scaler= "min_max"):
 
     x, missing = generate_missing_values(a, p)
 
@@ -1041,7 +1042,19 @@ def uframe_from_array_mice(a: np.ndarray, p=0.1, mice_iterations=5, kernel="stat
 
         if len(imp_arrays) == 0:
             continue
+        
+        
+        # for i, arr in enumerate(imp_arrays):
+        #     scaler= MinMaxScaler()
+        #     arr = scaler.fit_transform(arr)
+        #     imp_arrays[i]= arr
+        
+        # print("Imp arrays after scaling")
+        
         imp_array = np.concatenate(imp_arrays, axis=0)
+        scaler = MinMaxScaler()
+        imp_array = (scaler.fit_transform(imp_array.T)).T
+        #print("Shape of imp array", imp_array.shape)
 
         if kernel == "stats.gaussian_kde":
             kde = stats.gaussian_kde(imp_array)
@@ -1055,15 +1068,19 @@ def uframe_from_array_mice(a: np.ndarray, p=0.1, mice_iterations=5, kernel="stat
 
         distr[i] = imp_distr
 
+    print(x)
+    scaler= MinMaxScaler()
+    x = scaler.fit_transform(x)
+    #a[missing==1]=np.nan
     u = uframe()
     u.append(new=[x, distr])
 
     return u
 
+#TO DO: version of uframe_from_array_mice for categorical imputation/ mix of categorical and continuous 
+
 # add Gaussian noise of given std to chosen entries
 # relative=True: multiply std with standard deviation of the column to get the std for a column
-
-
 def uframe_noisy_array(a: np.ndarray, std=0.1, relative=False, unc_percentage=0.1):
 
     if relative:
