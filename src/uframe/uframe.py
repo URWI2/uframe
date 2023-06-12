@@ -9,25 +9,9 @@ import miceforest as mf
 import math
 from copy import deepcopy
 
-# make only a private attribute _col_dtype, which is settled automatically
-# check for contradictions with categorical variables
-# each column has to be either categorical or continuous, including and checking that will be important
-# in previous append functions without categorical types, a check will be needed for dtypes of columns as well
-# but that can be done properly after everything works and a col_dtype attribute is introduced
-
-# function for printing col_dtypes: for all columns, use _colnames to get right number and print out dtypes
-# set coltype(columns, types): erlaube Listen oder Spaltennamen und Datentypen zum Setzen
-# defaults: continuous für continuous und certain data, categorical für kategoriell
-'''
-neue append Funktionen:
-- Liste von stetigen Verteilungen mit Liste von kat. Verteilungen und Indexinformationen (evtl. für alle Typen von RV & Kernel anpassen)
-- 4er-Pack: Array, stetiges Dict., kat. Dict, Indexinformationen
--Liste gemischter stetiger Verteilungen/ Kerne (i.e., allgemeine Mischung aus append_scipy_kde, sklearn_kde, rv_cont): evtl.
-
-'''
-
-# append Funktion mit Liste von kat., Liste von kernel/ stetig (mehrere Typen) und Indexinformation
-# append Funktion mit allen 3 Typen gemischt
+#nur Integer als Keys für kategorielle Verteilung zugelassen, muss append Funktion entsprechend anpassen 
+#checke jeweils, ob schon cat value dict vorhanden, falls ja, ob es ergänzt werden muss
+#falls kein cat value dict vorhanden, suche eine cat value Liste, die geeignet ist 
 
 
 class uframe():
@@ -97,6 +81,10 @@ class uframe():
         return
 
     # checking for what new represents is not ideal as of now, probably need more checks for wrong values of new
+    #simplify this so that only the "big" mixed function is used
+    #then incorporate self.cat_value_dict in this (need update function for that as well)
+    
+    
     def append(self, new=None, colnames=None, rownames=None):
 
         if new is None:
@@ -178,7 +166,10 @@ class uframe():
 
     # append a numpy array with certain data (2D-array)
     def append_from_numpy(self, new=None, colnames=None, rownames=None):
-
+        
+        self.append_with_mixed_distributions(certain=new, continuous={}, categorical={},
+                                             indices={}, colnames=colnames)
+        '''
         if len(self.columns) > 0:
 
             if new.shape[1] != len(self.columns):
@@ -212,7 +203,7 @@ class uframe():
                                       name in enumerate(colnames)}
 
             self._col_dtype = len(self.columns) * ['continuous']
-
+ '''
         if rownames is not None:
 
             # check rownames for duplicates (also with previously existing rownames)
@@ -231,7 +222,7 @@ class uframe():
             # print("Rows", self.rows, "updated with", [*list(range(len(self.data) - len(new), len(self.data)))])
             self._rownames.update({i: i for i in range(
                 len(self.data) - len(new), len(self.data))})
-
+       
         return
 
     # distr list: list of list of dicts (1 list of dicts per instance)
@@ -553,7 +544,6 @@ class uframe():
                                                           list(np.where(np.isnan(certain[i]))[0])]))
         return
 
-    # not tested yet
     def append_with_mixed_distributions(self, certain, continuous, categorical, indices, colnames=None):
 
         # certain is an array with missing values indicated by nan values
