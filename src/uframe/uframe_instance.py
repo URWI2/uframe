@@ -140,7 +140,7 @@ class uframe_instance():
 
     # mode functions
     def mode(self):
-        if not hasattr(self, "__mode"):
+        if not hasattr(self, "_uframe_instance__mode"):
             self.__mode =  self.__align(self.__mode_continuous(), self.__mode_categorical())
         return self.__mode
     
