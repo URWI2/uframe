@@ -1,7 +1,7 @@
 import numpy as np 
 import scipy
 from sklearn.neighbors import KernelDensity
-from uframe import uframe_instance
+from src.uframe import uframe_instance
 import pytest
 import random
 
