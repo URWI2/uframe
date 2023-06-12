@@ -128,12 +128,12 @@ class uframe():
 
         elif isinstance(new, list):
 
-            if len(new) == 4 and isinstance(new[0], np.array) and isinstance(new[1], dict):
-                try:
-                    self.append_with_mixed_distributions(certain=new[0], continuous=new[1],
+            if len(new) == 4 and isinstance(new[0], np.ndarray) and isinstance(new[1], dict):
+                #try:
+                self.append_with_mixed_distributions(certain=new[0], continuous=new[1],
                                                          categorical=new[2], indices=new[3])
-                except BaseException:
-                    raise ValueError("Unsuitable parameter new given")
+                #except BaseException:
+                    #raise ValueError("Unsuitable parameter new given")
 
             if len(new) == 2 and isinstance(new[0], np.ndarray) and isinstance(new[1], dict):
 
@@ -562,6 +562,8 @@ class uframe():
         # indices: dict, keys are indices of lines with missing values, values are lists of 2 lists, first list are indices of missing values with continuous distr, second with categorical
         # indices have to match the missing values in certain and the dimensions of the continuous and categorical distr.
 
+        #print("Indices", indices)
+        
         if len(self.columns) > 0:
 
             if len(self.columns) != certain.shape[1]:
@@ -586,9 +588,9 @@ class uframe():
         self._col_dtype = []
         for col_index in range(len(self.columns)):
             if np.any(np.isnan(certain[:, col_index])):
-                categoricals = [i for i in range(len(certain)) if col_index in indices[i][1]]
+                categoricals = [i for i in range(len(certain)) if i in indices.keys() and col_index in indices[i][1]]
                 if len(categoricals) > 0:
-                    conts = [i for i in range(len(certain)) if col_index in indices[i][0]]
+                    conts = [i for i in range(len(certain)) if i in indices.keys() and col_index in indices[i][0]]
                     if len(conts) > 0:
                         raise ValueError("Continuous and categorical distr in same column")
                         certain_values = certain[:, col_index][np.isnan(certain[:, col_index] == False)]
@@ -944,8 +946,10 @@ class uframe():
 
     # does not work on uframe instance level yet
     def ev(self):
-
-        return np.concatenate([inst.ev() for inst in self.data], axis=0)
+        
+        evs = [inst.ev() for inst in self.data]
+        print([(ev, type(ev)) for ev in evs])
+        return np.concatenate([ev.reshape((1, len(ev))) for ev in evs], axis=0)
 
     # performs One Hot Encoding of categorical columns after filling uncertain values by sampling/ mode/ ev
     # return columns in some way?
@@ -970,7 +974,16 @@ class uframe():
                 label_encoder = LabelEncoder()
                 integer_encoded = label_encoder.fit_transform(x[:, i])
                 # print(integer_encoded)
-                categories = []
+                
+                #uframe can self.cat_values dictionary als Attribut haben 
+                #enthält Werte, die mindestens zu berücksichtigen sind
+                #keine optimale Lösung, kann später bessere finden 
+                
+                if hasattr(self, 'cat_values') and i in self.cat_values.keys():
+                    categories = self.cat_values[i]
+                else:
+                    categories = []
+                    
                 for j in range(len(self.data)):
                     if i in self.data[j].indices[0]:
                         categories.append(self.data[j].certain_data[self.data[j].indices[0].index(i)])
@@ -981,7 +994,7 @@ class uframe():
                  
                 categories = [np.array(list(set(categories)))]
 
-                # print("Categories", categories)
+                #print("Categories", categories)
                 onehot_encoder = OneHotEncoder(sparse=False, categories= categories)
                 integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
                 onehot_encoded = onehot_encoder.fit_transform(integer_encoded)
@@ -1000,12 +1013,133 @@ class uframe():
 
         return x_ohe
 
+    #gets dummies for given array x, which has to match the column number, no extra method there
+    def get_dummies_for_array(self, x):
+        
+        x_ohe = None
+        for i in range(x.shape[1]):
+            if self._col_dtype[i] == 'categorical':
+
+                # brauchen wir hier label encoding überhaupt? Nur ganzzahlige Werte
+                #das muss hier ersetzt werden durch die Spalte, integer_encoded ist bereits np.array hier
+                #arrays sollten aber bereits in Integer-Form sein 
+                # label_encoder = LabelEncoder()
+                # integer_encoded = label_encoder.fit_transform(x[:, i])
+                # print(integer_encoded)
+                
+                #hier evtl. Schritt mit cat values dict des uframe
+                integer_encoded = x[:,i]
+                
+                #uframe can self.cat_values dictionary als Attribut haben 
+                #enthält Werte, die mindestens zu berücksichtigen sind
+                #keine optimale Lösung, kann später bessere finden 
+                
+                #das passt, cat_values bleibt zunächst, muss aber mit Code dict abgestimmt werden
+                #evtl später ersetzen, statt cat_values nur noch ein geeignetes dict, das erstellt wird
+                #brauche aber für udata die Möglichkeit, händisch cat_values zu setzen
+                #das sollte sich dann evtl. einfach auf das dict auswirken 
+                #dict berücksichtigt mindestens alle Werte, die händisch in cat values sind
+                #was ist, wenn cat_values fest ist und eine neue Instanz dem widersprechen würde?
+                
+                if hasattr(self, 'cat_values') and i in self.cat_values.keys():
+                    categories = self.cat_values[i]
+                else:
+                    categories = []
+                    
+                for j in range(len(self.data)):
+                    if i in self.data[j].indices[0]:
+                        categories.append(self.data[j].certain_data[self.data[j].indices[0].index(i)])
+                    elif i in self.data[j].indices[2]:
+
+                        categories = categories + [float(key) for key in 
+                                                   self.data[j].categorical[self.data[j].indices[2].index(i)].keys()]
+                 
+                categories = [np.array(list(set(categories)))]
+
+                #print("Categories", categories)
+                onehot_encoder = OneHotEncoder(sparse=False, categories= categories)
+                integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
+                onehot_encoded = onehot_encoder.fit_transform(integer_encoded)
+                
+                # print("One hot encoded shape", onehot_encoded.shape)
+                if x_ohe is None:
+                    x_ohe = onehot_encoded
+                else:
+                    x_ohe = np.concatenate((x_ohe, onehot_encoded), axis=1)
+
+            else:
+                if x_ohe is None:
+                    x_ohe = x[:, i].reshape((len(x), 1))
+                else:
+                    x_ohe = np.concatenate((x_ohe, x[:, i].reshape((len(x), 1))), axis=1)
+
+        return x_ohe
+           
+    def make_cat_value_dicts(self):
+        
+        self.cat_value_dicts = {}
+        
+        for i in range(len(self.columns)):
+            
+            if self._col_dtype[i]=='categorical':
+            
+            #check if self has a cat values attribute
+                if hasattr(self, 'cat_values') and i in self.cat_values.keys():
+                    categories = self.cat_values[i]
+                else:
+                    categories = []
+                
+                for j in range(len(self.data)):
+                    if i in self.data[j].indices[0]:
+                        categories.append(self.data[j].certain_data[self.data[j].indices[0].index(i)])
+                    elif i in self.data[j].indices[2]:
+    
+                        categories = categories + [float(key) for key in 
+                                               self.data[j].categorical[self.data[j].indices[2].index(i)].keys()]
+             
+                categories = list(set(categories)).sort()
+                
+                self.cat_value_dicts[i]= {categories[i]:i for i in range(len(categories))}
+            
+            else:
+                self.cat_value_dicts[i]= {}
+        
+        return 
+    
+    #new stuff as parameter: do not think so, would have to find out what new uframe instances are there
+    def update_cat_value_dicts(self):
+        
+        #check for each categorical column if all its values are already in the cat value dict 
+        #if not, append new keys with them and give them the correct index 
+        
+        
+        return 
+            
+    
     def __getitem__(self, index):
         return self.data[index]
 
     # TO DO: function which takes i,j and returns element of uframe (need marginal distributions for that)
 
-
+    def add_cat_values(self, cat_value_dict):
+        
+        if hasattr(self, 'cat_values'):
+            self.cat_values.update(cat_value_dict)
+        else:
+            self.cat_values = cat_value_dict
+        
+        self.update_cat_value_dicts()
+        
+        return 
+    
+    #Funktion, die automatisch cat valuesbestimmt (oder aus cat value dict übernimmt) und dict mit Codierung macht
+    #falls die Werte Integer sind, ist einfach {i:i für alle i} das dict 
+    #update Funktion benötigt, die am Ende von append aufgerufen wird 
+    #self cat value code dict muss an uframe instances übergeben werden 
+    #damit dann auch die label encoder Geschichten ersetzen!
+    
+    #neue get dummies Funktion, die gleich ein array nimmt, später dann die bisherige Version anpassen 
+    
 # takes np array, randomly picks percentage of values p and introduces uncertainty there
 # allow different kernels for the values given by mice, then use the mixed distr append function
 # allow scipy or sklearn kernels
@@ -1030,9 +1164,10 @@ def uframe_from_array_mice(a: np.ndarray, p=0.1, mice_iterations=5, kernel="stat
         imp_arrays = []
         for j in range(x.shape[1]):
             if np.isnan(x[i, j]):
-
+                #diese Schleife durch list comprehension ersetzen 
                 imp_values = []
 
+               
                 for k in range(mice_iterations):
                     imput_x = kds.complete_data(iteration=k)
                     imp_values.append(imput_x[i, j])
@@ -1068,16 +1203,124 @@ def uframe_from_array_mice(a: np.ndarray, p=0.1, mice_iterations=5, kernel="stat
 
         distr[i] = imp_distr
 
-    print(x)
+    
     scaler= MinMaxScaler()
     x = scaler.fit_transform(x)
     #a[missing==1]=np.nan
     u = uframe()
     u.append(new=[x, distr])
+    
 
     return u
 
-#TO DO: version of uframe_from_array_mice for categorical imputation/ mix of categorical and continuous 
+#all columns in cat_indices are treated as categoricals: the mice results are used to calculate probs
+#später das als einzige Version der mice Funktion behalten 
+def uframe_from_array_mice_2(a: np.ndarray, p=0.1, mice_iterations=5, kernel="stats.gaussian_kde",
+                           scaler= "min_max", cat_indices=[]):
+
+    x, missing = generate_missing_values(a, p)
+
+    distr = {}
+    cat_distr = {}
+    index_dict={}
+
+    # train mice imputation correctly
+    kds = mf.ImputationKernel(
+        x,
+        save_all_iterations=True,
+        random_state=100)
+
+    kds.mice(mice_iterations)
+    for i in range(x.shape[0]):
+        # print("Line", i)
+        imp_distr = None
+        imp_arrays = []
+        cat_distributions = []
+        for j in range(x.shape[1]):
+            if np.isnan(x[i, j]) and j not in cat_indices:
+
+                imp_values = []
+
+                for k in range(mice_iterations):
+                    imput_x = kds.complete_data(iteration=k)
+                    imp_values.append(imput_x[i, j])
+
+                imp_value_arr = np.array(imp_values).reshape((1, mice_iterations))
+                imp_arrays.append(imp_value_arr)
+                
+                if i in index_dict.keys():
+                    index_dict[i][0].append(j)
+                else:
+                    index_dict[i]=[[j], []]
+                
+            if np.isnan(x[i,j]) and j in cat_indices:
+                
+                imp_values = []
+                for k in range(mice_iterations):
+                    imput_x = kds.complete_data(iteration=k)
+                    imp_values.append(imput_x[i,j])
+                
+                d={}
+                for imp_value in imp_values:
+                    if imp_value in d.keys():
+                        d[imp_value]+= 1/mice_iterations
+                    else:
+                        d[imp_value] = 1/mice_iterations 
+                        
+                cat_distributions.append(d)
+                
+                if i in index_dict.keys():
+                    index_dict[i][1].append(j)
+                else:
+                    index_dict[i]=[[],[j]]
+                
+            cat_distr[i]= cat_distributions
+            
+        if len(imp_arrays) == 0:
+            continue
+        
+        
+        # for i, arr in enumerate(imp_arrays):
+        #     scaler= MinMaxScaler()
+        #     arr = scaler.fit_transform(arr)
+        #     imp_arrays[i]= arr
+        
+        # print("Imp arrays after scaling")
+        
+        imp_array = np.concatenate(imp_arrays, axis=0)
+        scaler = MinMaxScaler()
+        imp_array = (scaler.fit_transform(imp_array.T)).T
+        #print("Shape of imp array", imp_array.shape)
+
+        if kernel == "stats.gaussian_kde":
+            kde = stats.gaussian_kde(imp_array)
+
+        else:
+            imp_array = imp_array.T
+            kde = KernelDensity(kernel=kernel, bandwidth=1.0).fit(imp_array)
+            #print("Dimension of kde", kde.n_features_in_)
+
+        imp_distr = kde
+
+        distr[i] = imp_distr
+
+    print(x)
+    cont_indices = [i for i in range(x.shape[1]) if i not in cat_indices]
+    print("Cont indices")
+    scaler= MinMaxScaler()
+    x_cont = scaler.fit_transform(x[:,cont_indices])
+    print("X cont scaled", x_cont)
+    x[:,cont_indices]=x_cont
+    print("X after scaling", x, x[:,cat_indices])
+    #a[missing==1]=np.nan
+    u = uframe()
+    
+    print("Cat distr", cat_distr)
+    u.append(new=[x, distr, cat_distr, index_dict])
+
+    print("Col dtype", u._col_dtype)
+    return u
+
 
 # add Gaussian noise of given std to chosen entries
 # relative=True: multiply std with standard deviation of the column to get the std for a column
