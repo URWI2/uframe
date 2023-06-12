@@ -176,7 +176,7 @@ class uframe_instance():
     def __mode_categorical(self):
         if self.n_categorical == 0:
             return np.array([])
-        return np.array([np.argmax([*dist.values()]) for dist in self.categorical]).reshape(1, -1)
+        return np.array([list(dist.keys())[np.argmax([*dist.values()])] for dist in self.categorical]).reshape(1, -1)
 
     # sampling functions
     def sample(self, n: int = 1, seed: Optional[int] = None):
@@ -189,7 +189,7 @@ class uframe_instance():
         return np.array([self.__sample_categorical_dist(dist, n, seed) for dist in self.categorical]).transpose()
 
     def __sample_categorical_dist(self, dist, n, seed: Optional[int] = None):
-        return np.random.choice([*range(len(dist.values()))], size=n, p=[*dist.values()])
+        return np.random.choice(list(dist.keys()), size=n, p=[*dist.values()])
 
     def sample_continuous(self, n: int = 1, seed: Optional[int] = None):
         return np.array([])
@@ -223,8 +223,11 @@ class uframe_instance():
         return self.__ev
 
     def __check_categorical(self):
+        
         for d in self.categorical:
             assert isinstance(d, dict)
+            assert all([key.isdigit() for key in list(d.keys())]), "Keys of categorical uncertain object have to be integer"
+            
         for d in self.categorical:
             assert sum(d.values()) == 1
 
