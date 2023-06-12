@@ -226,7 +226,7 @@ class uframe_instance():
         
         for d in self.categorical:
             assert isinstance(d, dict)
-            assert all([key.isdigit() for key in list(d.keys())]), "Keys of categorical uncertain object have to be integer"
+            assert all([type(key) == int for key in list(d.keys())]), "Keys of categorical uncertain object have to be integer"
             
         for d in self.categorical:
             assert sum(d.values()) == 1
