@@ -9,9 +9,16 @@ import miceforest as mf
 import math
 from copy import deepcopy
 
+#SOLANGE DAS NICHT FUNKTIONIERT; MÜSSEN WERTE IN KATEGORIELLEN SPALTEN GANZZAHLIG SEIN
 #nur Integer als Keys für kategorielle Verteilung zugelassen, muss append Funktion entsprechend anpassen 
 #checke jeweils, ob schon cat value dict vorhanden, falls ja, ob es ergänzt werden muss
 #falls kein cat value dict vorhanden, suche eine cat value Liste, die geeignet ist 
+
+#expected value im kategoriellen Fall und geeignete Anpassung der get dummies Funktionen
+#nach ev darf mit diesme Array einfach kein get dummies with array gecallt werden 
+
+#self cat value dicts muss automatisch erstellt und geupdatet werden, damit ev so funktioniert 
+#kann dann auch die OHE Funktionen damit anpassen 
 
 
 class uframe():
@@ -227,7 +234,15 @@ class uframe():
 
     # distr list: list of list of dicts (1 list of dicts per instance)
     def append_from_categorical(self, distr_list, colnames=None):
-
+        
+        #need correct dimension from first element of distr_list
+        dimension = len(distr_list[0])
+        a = np.empty((len(distr_list),dimension))
+        a[:]= np.nan
+        self.append_with_mixed_distributions(certain=a, continuous={}, 
+                                             categorical={i:distr_list[i] for i in range(len(distr_list))},
+                                             indices={i:[[], [*list(range(dimension))]] for i in range(len(distr_list))})
+        '''
         if len(self.columns) > 0:
             dimensions = len([len(l) for l in distr_list if len(l) == len(self.columns)])
             if dimensions != len(distr_list):
@@ -257,9 +272,18 @@ class uframe():
                                              indices=[[], [], [*list(range(len(distr)))]]))
 
         return
-
+    
+    '''
     def append_from_scipy_kde(self, kernel_list, colnames=None):
+        
+        dimension = kernel_list[0].d
+        a = np.empty((len(kernel_list), dimension))
+        a[:]= np.nan
+        self.append_with_mixed_distributions(certain=a, continuous={i:kernel_list[i] for i in range(len(kernel_list))}, 
+                                             categorical={}, 
+                                             indices={i:[[*list(range(dimension))],[]] for i in range(len(kernel_list))})
 
+        '''
         if len(self.columns) > 0:
 
             dimensions = len(
@@ -295,11 +319,19 @@ class uframe():
         for i, kernel in enumerate(kernel_list):
             self.data.append(uframe_instance(continuous=kernel, certain_data=None,
                                              indices=[[], [*list(range(kernel.d))], []]))
-
+         '''   
         return
 
     def append_from_sklearn_kde(self, kernel_list, colnames=None):
-
+        
+        dimension = kernel_list[0].n_features_in_
+        a = np.empty((len(kernel_list), dimension))
+        a[:]= np.nan
+        self.append_with_mixed_distributions(certain=a, continuous={i:kernel_list[i] for i in range(len(kernel_list))}, 
+                                             categorical={}, 
+                                             indices={i:[[*list(range(dimension))],[]] for i in range(len(kernel_list))})
+        
+        '''
         if len(self.columns) > 0:
 
             dimensions = len(
@@ -335,11 +367,30 @@ class uframe():
         for i, kernel in enumerate(kernel_list):
             self.data.append(uframe_instance(continuous=kernel, certain_data=None,
                                              indices=[[], [*list(range(kernel.n_features_in_))], []]))
+        '''
 
     # jeder Eintrag von distr_list muss entweder eine multivariate Verteilung über alle Variablen
     # oder eine Liste unabhängiger 1D-Verteilungen
     def append_from_rv_cont(self, distr_list, colnames=None):
-
+        
+        distr= distr_list[0]
+        if issubclass(type(distr), scipy.stats._multivariate.multi_rv_generic) or issubclass(type(distr), scipy.stats._multivariate.multi_rv_frozen):
+            dimension = distr.mean.shape[0]
+        elif issubclass(type(distr), scipy.stats._distn_infrastructure.rv_continuous_frozen) or issubclass(type(distr), scipy.stats.rv_continuous):
+            dimension = distr.rvs(size=1).shape[0]
+        elif isinstance(distr, list):
+            dimension = sum([d.rvs(size=1).shape[0] for d in distr])
+        else:
+            raise ValueError("Invalid argument in distribution list")
+        
+        a = np.empty((len(distr_list),dimension))
+        a[:] = np.nan
+        self.append_with_mixed_distributions(certain=a, 
+                                             continuous = {i:distr_list[i] for i in range(len(distr_list))}, 
+                                             categorical={}, 
+                                             indices={i:[[*list(range(dimension))],[]] for i in range(len(kernel_list))})
+            
+        '''
         dimensions_mv = [distr.mean.shape[0]
                          for distr in distr_list if issubclass(type(distr), scipy.stats._multivariate.multi_rv_generic) or
                          issubclass(type(distr), scipy.stats._multivariate.multi_rv_frozen)]
@@ -398,13 +449,18 @@ class uframe():
                 assert len(distr) == len(self.columns)
             self.data.append(uframe_instance(continuous=distr, certain_data=None,
                                              indices=[[], [*list(range(d_list[0]))], []]))
-
+            '''
         return
 
     # assume dictionary with indices of incomplete lines as keys and scipy kdes as values
     # nan values for uncertain values in array certain
     def append_from_mix_with_distr(self, certain, distr, colnames=None):
-
+        
+        self.append_with_mixed_distributions(certain=certain, 
+                                             continuous=distr, 
+                                             categorical={}, 
+                                             indices={i:[list(np.where(np.isnan(certain[i]))[0]),[]] for i in distr.keys()})
+        '''
         if len(self.columns) > 0:
 
             if len(self.columns) != certain.shape[1]:
@@ -485,9 +541,15 @@ class uframe():
                                                  certain_data=certain[i, :],
                                                  indices=[list(np.where(np.isnan(certain[i]) == False)[0]),
                                                           [], []]))
+                '''
         return
 
     def append_with_mixed_categorical(self, certain, distr, colnames=None):
+        
+        self.append_with_mixed_distributions(certain=certain, continuous={}, 
+                                             categorical=distr, 
+                                             indices= {i:[[],list(np.where(np.isnan(certain[i]))[0])] for i in distr.keys()})
+        '''
         # certain is an array with missing values indicated by nan values
         # distr: dict, keys are indices of lines with missing values, values are lists of dicts with categorical distributions for them
 
@@ -542,6 +604,7 @@ class uframe():
                                                      certain[i]) == False],
                                                  indices=[list(np.where(np.isnan(certain[i]) == False)[0]), [],
                                                           list(np.where(np.isnan(certain[i]))[0])]))
+                '''
         return
 
     def append_with_mixed_distributions(self, certain, continuous, categorical, indices, colnames=None):
@@ -938,9 +1001,60 @@ class uframe():
     def ev(self):
         
         evs = [inst.ev() for inst in self.data]
-        print([(ev, type(ev)) for ev in evs])
-        return np.concatenate([ev.reshape((1, len(ev))) for ev in evs], axis=0)
-
+        if 'categorical' not in self._col_dtype:
+            
+            print([(ev, type(ev)) for ev in evs])
+            return np.concatenate([ev.reshape((1, len(ev))) for ev in evs], axis=0)
+        else:
+            print("Evs", evs)
+            
+            #conts = [ev[0].shape for ev in evs]
+            cats = [ev[1] for ev in evs]
+            print("Length of cats", len(cats), cats)
+            conts = np.concatenate([ev[0].reshape((1, len(ev[0]))) for ev in evs], axis=0)
+            print("Conts", conts)
+            ohes = {}
+            for i in range(len(self.columns)):
+                if self._col_dtype[i]=='categorical':
+                
+                    #have some known values in conts as well as nan values
+                    
+                    #have to iterate over lines
+                    #know all levels of this variable from cat value dict
+                    #need to make sure it exists 
+                    levels = list(self.cat_value_dicts[i].keys())
+                    m = np.zeros((conts.shape[0], len(levels)))
+                    for j in range(conts.shape[0]):
+                        print("i", i, "j", j, "Indices", self.data[j].indices)
+                        if np.isnan(conts[j,i]):
+                            index = self.data[j].indices[2].index(i)
+                            print("I", i, "j", j, "Index", index)
+                            for key in cats[j][index].keys():
+                                print("Cat value dict for column i", self.cat_value_dicts[i])
+                                print("Key", key)
+                                m[j,int(self.cat_value_dicts[i][key])]= cats[j][index][key]
+                        else:
+                            m[j, int(conts[j,i])]=1
+                    
+                    ohes[i]= m
+                
+                #get new array from conts and the m arrays in ohes 
+            ev_array = None
+            for i in range(len(self.columns)):
+                if ev_array is None:
+                    if self._col_dtype[i]=='categorical':
+                        ev_array = ohes[i]
+                    else:
+                        ev_array = conts[:,i]
+                else:
+                    if self._col_dtype[i]=='categorical':
+                        ev_array = np.concatenate((ev_array, ohes[i]), axis=1)
+                    else:
+                        ev_array = np.concatenate((ev_array, conts[:,i].reshape((conts.shape[0],1))), axis=1)
+            
+            return ev_array 
+                
+                    
     # performs One Hot Encoding of categorical columns after filling uncertain values by sampling/ mode/ ev
     # return columns in some way?
     def get_dummies(self, method='sample', samples_per_distrib=1):
@@ -952,7 +1066,9 @@ class uframe():
         elif method == 'mode':
             x = self.mode()
         elif method == 'ev':
+            #expected value already incorporates ohe in categorical case 
             x = self.ev()
+            return x 
         else:
             raise ValueError("Need method for treating uncertain values")
 
@@ -961,10 +1077,11 @@ class uframe():
             if self._col_dtype[i] == 'categorical':
 
                 # brauchen wir hier label encoding überhaupt? Nur ganzzahlige Werte
-                label_encoder = LabelEncoder()
-                integer_encoded = label_encoder.fit_transform(x[:, i])
+                # label_encoder = LabelEncoder()
+                # integer_encoded = label_encoder.fit_transform(x[:, i])
                 # print(integer_encoded)
                 
+                integer_encoded = x[:,i]
                 #uframe can self.cat_values dictionary als Attribut haben 
                 #enthält Werte, die mindestens zu berücksichtigen sind
                 #keine optimale Lösung, kann später bessere finden 
@@ -1071,6 +1188,8 @@ class uframe():
         
         for i in range(len(self.columns)):
             
+            print("I", i)
+            
             if self._col_dtype[i]=='categorical':
             
             #check if self has a cat values attribute
@@ -1087,8 +1206,8 @@ class uframe():
                         categories = categories + [float(key) for key in 
                                                self.data[j].categorical[self.data[j].indices[2].index(i)].keys()]
              
-                categories = list(set(categories)).sort()
-                
+                categories = list(set(categories))
+                print("Categories", categories)
                 self.cat_value_dicts[i]= {categories[i]:i for i in range(len(categories))}
             
             else:
