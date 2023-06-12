@@ -1,7 +1,7 @@
 import numpy as np 
 import scipy
 from sklearn.neighbors import KernelDensity
-from src.uframe.uframe_instance import uframe_instance
+from src.uframe import uframe_instance
 import pytest
 import random
 
@@ -75,10 +75,10 @@ def test_indices():
              None,
              0
          ),(
-             [{"0":0.1, "1":0.9}],
+             [{0:0.1, 1:0.9}],
              1
          ),(
-             [{"0":0.1, "1":0.9}, {"1":0.6, "0":0.4}],
+             [{0:0.1, 1:0.9}, {1:0.6, 0:0.4}],
              2
          ),
          
@@ -91,6 +91,10 @@ def test_categorical(cat,shape):
     assert instance.mode().shape == (1,2+shape)
     assert instance.sample(1).shape == (1,2+shape)
     assert instance.sample(3).shape == (3,2+shape)
+    
+    
+
+    
     
      
      

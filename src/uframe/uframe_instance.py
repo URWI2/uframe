@@ -212,7 +212,7 @@ class uframe_instance():
 
     def ev(self, n: Optional[int] = 50, seed: Optional[int] = None):
 
-        if hasattr(self,"__ev"):
+        if hasattr(self,"_uframe_instance__ev"):
             return self.__ev
 
         self.__ev = (self.sample(n, seed)).mean(axis=0)
