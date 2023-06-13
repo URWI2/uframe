@@ -1,5 +1,6 @@
 import numpy as np
-from src.uframe import uframe_instance
+#from src.uframe import uframe_instance
+from uframe_instance import uframe_instance
 import scipy
 from scipy import stats
 from sklearn.neighbors import KernelDensity
