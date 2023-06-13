@@ -106,7 +106,7 @@ data.sample()
 
 ## Dependencies
 - [NumPy - Enables working with large, multi-dimensional arrays, matrices and provides high-level mathematical functions to operate on these arrays](https://www.numpy.org)
-
+- [miceforest - Fast, memory efficient Multiple Imputation by Chained Equations (MICE) with lightgbm, that can be used to create uncertain data](https://pypi.org/project/miceforest/)
 
 ## License
 [MIT](LICENSE)
