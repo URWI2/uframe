@@ -52,6 +52,7 @@ class uframe_instance():
         """
 
         certain_data = np.array([]) if certain_data is None else certain_data
+        certain_data = np.array([certain_data]) if type(certain_data) == list else certain_data
         self.certain_data = certain_data
 
         self.indices = indices
