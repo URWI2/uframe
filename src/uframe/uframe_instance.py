@@ -291,7 +291,7 @@ class uframe_instance():
             return self.continuous.pdf(k)
         
         if isinstance(self.continuous, sklearn.neighbors._kde.KernelDensity):
-            return np.exp(self.continuous.score_samples(k))
+            return np.exp(self.continuous.score_samples(k.reshape(1,-1)))
             
         if (issubclass(type(self.continuous), scipy.stats.rv_continuous) or
               issubclass(type(self.continuous), scipy.stats._distn_infrastructure.rv_continuous_frozen) or
