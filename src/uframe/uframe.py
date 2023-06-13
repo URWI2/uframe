@@ -145,6 +145,7 @@ class uframe():
             elif isinstance(new[0], sklearn.neighbors._kde.KernelDensity):
                 self.append_from_sklearn_kde(new, colnames)
             elif isinstance(new[0], uframe_instance):
+                #print("Entered uframe instance list append loop")
                 self.append_from_uframe_instance(new, colnames)
             elif issubclass(type(new[0]), scipy.stats.rv_continuous) or issubclass(type(new[0]), scipy.stats._distn_infrastructure.rv_continuous_frozen):
                 self.append_from_rv_cont(new, colnames)
@@ -388,7 +389,7 @@ class uframe():
         self.append_with_mixed_distributions(certain=a, 
                                              continuous = {i:distr_list[i] for i in range(len(distr_list))}, 
                                              categorical={}, 
-                                             indices={i:[[*list(range(dimension))],[]] for i in range(len(kernel_list))})
+                                             indices={i:[[*list(range(dimension))],[]] for i in range(len(distr_list))})
             
         '''
         dimensions_mv = [distr.mean.shape[0]
@@ -799,7 +800,10 @@ class uframe():
                                       name in enumerate(colnames)}
             self._col_dtype = len(self.columns) * ['continuous']
 
+        # print("Data", self.data)
+        # print("Instances", instances)
         self.data = self.data + instances
+        # print("After appending", self.data)
 
         return
 
@@ -997,7 +1001,6 @@ class uframe():
 
         return np.concatenate([inst.sample(n, seed) for inst in self.data], axis=0)
 
-    # does not work on uframe instance level yet
     def ev(self):
         
         evs = [inst.ev() for inst in self.data]
@@ -1009,10 +1012,24 @@ class uframe():
             print("Evs", evs)
             
             #conts = [ev[0].shape for ev in evs]
-            cats = [ev[1] for ev in evs]
+            cats = []
+            conts = []
+            for i, ev in enumerate(evs):
+                if type(ev) is list:
+                    cats.append(ev[1])
+                    conts.append(ev[0])
+                else:
+                    cats.append([])
+                    conts.append(ev)
+            
             print("Length of cats", len(cats), cats)
-            conts = np.concatenate([ev[0].reshape((1, len(ev[0]))) for ev in evs], axis=0)
+            
+            #print("Ev 0 list", [ev[0] for ev in evs])
+            #print([ev[0].shape for ev in evs])
             print("Conts", conts)
+            print([cont.shape for cont in conts])
+            conts = np.concatenate([cont.reshape((1, len(cont))) for cont in conts], axis=0)
+            print("Conts", conts, conts.shape)
             ohes = {}
             for i in range(len(self.columns)):
                 if self._col_dtype[i]=='categorical':
@@ -1037,15 +1054,17 @@ class uframe():
                             m[j, int(conts[j,i])]=1
                     
                     ohes[i]= m
+                    print("Shape of ohes i", ohes[i].shape)
                 
                 #get new array from conts and the m arrays in ohes 
             ev_array = None
             for i in range(len(self.columns)):
+                print("i", i)
                 if ev_array is None:
                     if self._col_dtype[i]=='categorical':
                         ev_array = ohes[i]
                     else:
-                        ev_array = conts[:,i]
+                        ev_array = conts[:,i].reshape((conts.shape[0],1))
                 else:
                     if self._col_dtype[i]=='categorical':
                         ev_array = np.concatenate((ev_array, ohes[i]), axis=1)
@@ -1372,9 +1391,9 @@ def uframe_from_array_mice_2(a: np.ndarray, p=0.1, mice_iterations=5, kernel="st
                 d={}
                 for imp_value in imp_values:
                     if imp_value in d.keys():
-                        d[imp_value]+= 1/mice_iterations
+                        d[int(imp_value)]+= 1/mice_iterations
                     else:
-                        d[imp_value] = 1/mice_iterations 
+                        d[int(imp_value)] = 1/mice_iterations 
                         
                 cat_distributions.append(d)
                 
@@ -1560,6 +1579,13 @@ if __name__ == "__main__":
     h.append([[{0: 0.3, 1: 0.4, 2: 0.3}], [{0: 0.8, 1: 0.2}]])
 
     h = uframe()
-    a = np.array([[1, 2, np.nan], [np.nan, 3, np.nan]])
-    h.append([a, {0: [{0: 0.7, 1: 0.3}], 1: [{0: 0.3, 1: 0.1, 2: 0.6}, {0: 0.1, 3: 0.9}]}])
+    a = np.array([[1, 2, np.nan], [1, 3, np.nan]])
+    h.append([a, {0: [{0: 0.7, 1: 0.3}], 1: [{0: 0.1, 3: 0.9}]}])
     x_ohe = h.get_dummies()
+    
+    from scipy.stats import gamma, norm
+    uncertain = [uframe_instance(certain_data = np.array([2.1]), continuous = [norm(0.2,1), gamma(0.3)], indices = [[1],[0,2],[]]),
+                 uframe_instance(continuous = [norm(0.1,1), norm(0.3,0.7), gamma(1)], indices = [[],[1,0,2],[]])]
+    data = uframe()
+    data.append(uncertain)
+    print(data.sample())
