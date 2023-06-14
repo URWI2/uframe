@@ -726,8 +726,22 @@ class uframe():
 
                     elif isinstance(continuous[i], sklearn.neighbors._kde.KernelDensity):
 
-                        assert len(list(np.where(np.isnan(certain[i]) == False)[0]))
-                        + continuous[i].n_features_in_ + len(categorical[i]) == len(self.columns)
+                        # print("Certain i", certain[i])
+                        # print("False nan", np.where(np.isnan(certain[i]) == False))
+                        # print("List version", list(np.where(np.isnan(certain[i]) == False)[0]))
+                        # print("Length", len(list(np.where(np.isnan(certain[i]) == False)[0])))
+                        # print("Continuous dimension", continuous[i].n_features_in_)
+                        # print("Categorical dimension", len(categorical[i]))
+                        # print("self columns", self.columns)
+                        # print("Left",len(list(np.where(np.isnan(certain[i]) == False)[0]))
+                        # + continuous[i].n_features_in_ + len(categorical[i]) )
+                        # print("Right", len(self.columns))
+                        left = len(list(np.where(np.isnan(certain[i]) == False)[0]))+ continuous[i].n_features_in_ + len(categorical[i])
+                        right = len(self.columns)
+                        print(left, type(left))
+                        print(right, type(right))
+                        assert left==right
+                        # assert len(list(np.where(np.isnan(certain[i]) == False)[0]))+ continuous[i].n_features_in_ + len(categorical[i]) == len(self.columns)
 
                     elif isinstance(continuous[i], list):
                         distr_list = continuous[i]
@@ -963,7 +977,7 @@ class uframe():
 
         col_index = self._colnames[column]
         if self._col_dtype[col_index] == col_dtype:
-            print("Column already has desired col_dtype")
+            #print("Column already has desired col_dtype")
             return
         if col_dtype == 'continuous':
             for instance in self.data:
@@ -1007,10 +1021,10 @@ class uframe():
         evs = [inst.ev() for inst in self.data]
         if 'categorical' not in self._col_dtype:
             
-            print([(ev, type(ev)) for ev in evs])
+            #print([(ev, type(ev)) for ev in evs])
             return np.concatenate([ev.reshape((1, len(ev))) for ev in evs], axis=0)
         else:
-            print("Evs", evs)
+            #print("Evs", evs)
             
             #conts = [ev[0].shape for ev in evs]
             cats = []
@@ -1023,14 +1037,14 @@ class uframe():
                     cats.append([])
                     conts.append(ev)
             
-            print("Length of cats", len(cats), cats)
+           # print("Length of cats", len(cats), cats)
             
             #print("Ev 0 list", [ev[0] for ev in evs])
             #print([ev[0].shape for ev in evs])
-            print("Conts", conts)
-            print([cont.shape for cont in conts])
+            #print("Conts", conts)
+            #print([cont.shape for cont in conts])
             conts = np.concatenate([cont.reshape((1, len(cont))) for cont in conts], axis=0)
-            print("Conts", conts, conts.shape)
+            #print("Conts", conts, conts.shape)
             ohes = {}
             for i in range(len(self.columns)):
                 if self._col_dtype[i]=='categorical':
@@ -1043,24 +1057,24 @@ class uframe():
                     levels = list(self.cat_value_dicts[i].keys())
                     m = np.zeros((conts.shape[0], len(levels)))
                     for j in range(conts.shape[0]):
-                        print("i", i, "j", j, "Indices", self.data[j].indices)
+                        #print("i", i, "j", j, "Indices", self.data[j].indices)
                         if np.isnan(conts[j,i]):
                             index = self.data[j].indices[2].index(i)
-                            print("I", i, "j", j, "Index", index)
+                            #print("I", i, "j", j, "Index", index)
                             for key in cats[j][index].keys():
-                                print("Cat value dict for column i", self.cat_value_dicts[i])
-                                print("Key", key)
+                                #print("Cat value dict for column i", self.cat_value_dicts[i])
+                                #print("Key", key)
                                 m[j,int(self.cat_value_dicts[i][key])]= cats[j][index][key]
                         else:
                             m[j, int(conts[j,i])]=1
                     
                     ohes[i]= m
-                    print("Shape of ohes i", ohes[i].shape)
+                    #print("Shape of ohes i", ohes[i].shape)
                 
                 #get new array from conts and the m arrays in ohes 
             ev_array = None
             for i in range(len(self.columns)):
-                print("i", i)
+                #print("i", i)
                 if ev_array is None:
                     if self._col_dtype[i]=='categorical':
                         ev_array = ohes[i]
@@ -1208,7 +1222,7 @@ class uframe():
         
         for i in range(len(self.columns)):
             
-            print("I", i)
+            #print("I", i)
             
             if self._col_dtype[i]=='categorical':
             
@@ -1227,7 +1241,7 @@ class uframe():
                                                self.data[j].categorical[self.data[j].indices[2].index(i)].keys()]
              
                 categories = list(set(categories))
-                print("Categories", categories)
+                #print("Categories", categories)
                 self.cat_value_dicts[i]= {categories[i]:i for i in range(len(categories))}
             
             else:
@@ -1408,14 +1422,6 @@ def uframe_from_array_mice_2(a: np.ndarray, p=0.1, mice_iterations=5, kernel="st
         if len(imp_arrays) == 0:
             continue
         
-        
-        # for i, arr in enumerate(imp_arrays):
-        #     scaler= MinMaxScaler()
-        #     arr = scaler.fit_transform(arr)
-        #     imp_arrays[i]= arr
-        
-        # print("Imp arrays after scaling")
-        
         imp_array = np.concatenate(imp_arrays, axis=0)
         scaler = MinMaxScaler()
         imp_array = (scaler.fit_transform(imp_array.T)).T
@@ -1433,21 +1439,21 @@ def uframe_from_array_mice_2(a: np.ndarray, p=0.1, mice_iterations=5, kernel="st
 
         distr[i] = imp_distr
 
-    print(x)
+    #print(x)
     cont_indices = [i for i in range(x.shape[1]) if i not in cat_indices]
-    print("Cont indices")
+    #print("Cont indices")
     scaler= MinMaxScaler()
     x_cont = scaler.fit_transform(x[:,cont_indices])
-    print("X cont scaled", x_cont)
+    #print("X cont scaled", x_cont)
     x[:,cont_indices]=x_cont
-    print("X after scaling", x, x[:,cat_indices])
+    #print("X after scaling", x, x[:,cat_indices])
     #a[missing==1]=np.nan
     u = uframe()
     
-    print("Cat distr", cat_distr)
+    #print("Cat distr", cat_distr)
     u.append(new=[x, distr, cat_distr, index_dict])
 
-    print("Col dtype", u._col_dtype)
+    #print("Col dtype", u._col_dtype)
     return u
 
 
@@ -1456,7 +1462,7 @@ def uframe_from_array_mice_2(a: np.ndarray, p=0.1, mice_iterations=5, kernel="st
 def uframe_noisy_array(a: np.ndarray, std=0.1, relative=False, unc_percentage=0.1):
 
     if relative:
-        print("Get standard deviations of each column")
+        #print("Get standard deviations of each column")
         stds = std * np.std(a, axis=1)
     else:
         stds = np.repeat(std, a.shape[1])
