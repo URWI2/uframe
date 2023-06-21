@@ -738,8 +738,8 @@ class uframe():
                         # print("Right", len(self.columns))
                         left = len(list(np.where(np.isnan(certain[i]) == False)[0]))+ continuous[i].n_features_in_ + len(categorical[i])
                         right = len(self.columns)
-                        print(left, type(left))
-                        print(right, type(right))
+                        # print(left, type(left))
+                        # print(right, type(right))
                         assert left==right
                         # assert len(list(np.where(np.isnan(certain[i]) == False)[0]))+ continuous[i].n_features_in_ + len(categorical[i]) == len(self.columns)
 
@@ -1136,7 +1136,7 @@ class uframe():
                 categories = [np.array(list(set(categories)))]
 
                 #print("Categories", categories)
-                onehot_encoder = OneHotEncoder(sparse=False, categories= categories)
+                onehot_encoder = OneHotEncoder(sparse_output=False, categories= categories)
                 integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
                 onehot_encoded = onehot_encoder.fit_transform(integer_encoded)
                 
@@ -1198,7 +1198,7 @@ class uframe():
                 categories = [np.array(list(set(categories)))]
 
                 #print("Categories", categories)
-                onehot_encoder = OneHotEncoder(sparse=False, categories= categories)
+                onehot_encoder = OneHotEncoder(sparse_output=False, categories= categories)
                 integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
                 onehot_encoded = onehot_encoder.fit_transform(integer_encoded)
                 
