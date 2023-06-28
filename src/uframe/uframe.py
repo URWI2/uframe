@@ -9,6 +9,7 @@ from sklearn.preprocessing import LabelEncoder, OneHotEncoder, MinMaxScaler
 import miceforest as mf
 import math
 from copy import deepcopy
+import pickle 
 
 #SOLANGE DAS NICHT FUNKTIONIERT; MÜSSEN WERTE IN KATEGORIELLEN SPALTEN GANZZAHLIG SEIN
 #nur Integer als Keys für kategorielle Verteilung zugelassen, muss append Funktion entsprechend anpassen 
@@ -1282,6 +1283,28 @@ class uframe():
     #damit dann auch die label encoder Geschichten ersetzen!
     
     #neue get dummies Funktion, die gleich ein array nimmt, später dann die bisherige Version anpassen 
+    
+    def save(self, name="saved_uframe.pkl"):
+            
+        d = vars(self)
+        print("Save the following dict:", vars(self))
+        with open(name, 'wb') as f:
+            pickle.dump(d,f)
+        return 
+    
+def load_uframe(file):
+    
+    with open(file, 'rb') as f:
+        d = pickle.load(f)
+    
+    frame = uframe()
+    
+    for key in d.keys():
+        setattr(frame, key, d[key])
+    
+    return frame 
+    
+        
     
 # takes np array, randomly picks percentage of values p and introduces uncertainty there
 # allow different kernels for the values given by mice, then use the mixed distr append function
