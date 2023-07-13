@@ -8,6 +8,9 @@ import sklearn.neighbors
 import math
 from copy import deepcopy
 import pickle 
+import matplotlib.pyplot as plt 
+from matplotlib.backends.backend_pdf import PdfPages
+
 
 #SOLANGE DAS NICHT FUNKTIONIERT; MÜSSEN WERTE IN KATEGORIELLEN SPALTEN GANZZAHLIG SEIN
 #nur Integer als Keys für kategorielle Verteilung zugelassen, muss append Funktion entsprechend anpassen 
@@ -235,6 +238,7 @@ class uframe():
 
     # distr list: list of list of dicts (1 list of dicts per instance)
     def append_from_categorical(self, distr_list, colnames=None):
+        
         
         #need correct dimension from first element of distr_list
         dimension = len(distr_list[0])
@@ -882,6 +886,88 @@ class uframe():
     def __repr__(self):
 
         return "Object of class uframe"
+
+    def analysis(self, true_data = False, save = False): 
+        
+        if save is not False:
+              if not type (save) == str:
+                  save  = 'analysis_uframe'
+              
+              pdf = PdfPages(str(save)+'.pdf') 
+              _save = True 
+          
+              
+          
+          #Mode analysis
+        mode = self.mode()
+        for i in range(len(uframe._columns)):
+              
+            hist_fig, hist_ax = plt.subplots(1, 1, figsize=(9, 3))
+            hist_ax.set_title('Mode, Distribution of '+ str(uframe._colnames[i]))
+                
+            hist_ax.hist(mode[:,i])
+              
+            if _save == True: 
+                hist_fig.savefig(pdf, format = 'pdf')        
+              
+          
+          #EV analysis
+        ev = self.ev()
+        for i in range(len(uframe._columns)):
+              
+            hist_fig, hist_ax = plt.subplots(1, 1, figsize=(9, 3))
+            hist_ax.set_title('EV, Distribution of '+ str(uframe._colnames[i]))
+                    
+            hist_ax.hist(ev[:,i])
+            if _save == True: 
+                hist_fig.savefig(pdf, format = 'pdf')        
+                  
+          
+          
+        pdf.close()
+        if true_data is not False:
+            for i in range(len(uframe._columns)):
+                if self._col_dtype[i]== 'continuous':
+                    #Residues Mode - True 
+                    hist_fig, hist_ax = plt.subplots(1, 1, figsize=(9, 3))
+                    hist_ax.set_title('Residue of Mode, Distribution of '+ str(uframe._colnames[i]))
+                        
+                    hist_ax.hist(mode[:,i]-true_data[:,i])
+                      
+                    if _save == True: 
+                        hist_fig.savefig(pdf, format = 'pdf')        
+                      
+                    #Residues EV-True
+                    self._col_dtype[i]== 'continuous'
+                    #Residues Mode - True 
+                    hist_fig, hist_ax = plt.subplots(1, 1, figsize=(9, 3))
+                    hist_ax.set_title('Residue of EV, Distribution of '+ str(uframe._colnames[i]))
+                        
+                    hist_ax.hist(ev[:,i]-true_data[:,i])
+                      
+                    if _save == True: 
+                        hist_fig.savefig(pdf, format = 'pdf')        
+                                      
+                
+                #Accuracy in case of categorical
+                if self._col_dtype[i]== 'continuous':
+                    self._col_dtype[i]== 'continuous'
+                    #Residues Mode - True 
+                    hist_fig, hist_ax = plt.subplots(1, 1, figsize=(9, 3))
+                    hist_ax.set_title('Residue of Mode Distribution of '+ str(uframe._colnames[i]))
+                        
+                    hist_ax.hist(mode[:,i] == true_data[:,i])
+                      
+                    if _save == True: 
+                        hist_fig.savefig(pdf, format = 'pdf')        
+                      
+                
+            
+        
+        
+        
+        
+        
 
     def __str__(self):
 
