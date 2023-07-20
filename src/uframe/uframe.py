@@ -1,17 +1,14 @@
 import numpy as np
 #from src.uframe import uframe_instance
-from uframe_instance import uframe_instance
 import scipy
+from .uframe_instance import uframe_instance
 from scipy import stats
 from sklearn.neighbors import KernelDensity
 import sklearn.neighbors
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder, MinMaxScaler
+from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
 import miceforest as mf
 import math
-from copy import deepcopy
 import pickle 
-from sklearn.mixture import GaussianMixture 
-import torch 
 import matplotlib.pyplot as plt 
 from matplotlib.backends.backend_pdf import PdfPages
 
@@ -872,9 +869,9 @@ class uframe():
 
         return np.concatenate([inst.mode() for inst in self.data], axis=0)
 
-    def sample(self, n=1, seed=None):
+    def sample(self, n=1, seed=None, threshold = 1):
 
-        return np.concatenate([inst.sample(n, seed) for inst in self.data], axis=0)
+        return np.concatenate([inst.sample(n = n, seed = seed, threshold = threshold) for inst in self.data], axis=0)
 
     def ev(self):
         
@@ -1111,34 +1108,7 @@ def analysis_table(true, preds):
             
        
 
-#makes sense for continuous uncertain variables only 
-def prepare_for_adf(frame, n_samples=10):
-    
-    means = frame.array_rep()
-    variances = np.zeros(means.shape)
-    
-    #iterate over instances and use sample function of uframe_instance, if necessary
-    for i, inst in enumerate(frame.data):
-        
-        if np.any(np.isnan(means[i,:])):
-            nan_indices = np.argwhere(np.isnan(means[i,:]))
-            nan_indices.reshape(nan_indices.shape[0])
-            print("nan indices", nan_indices)
-            samples = inst.sample(n=n_samples)[:, nan_indices].squeeze(axis=2)
-            print("Samples", samples)
-            print(samples.shape)
-            gm = GaussianMixture(n_components=1, covariance_type='diag').fit(samples)
-        
-        distr_index = 0
-        for j in range(means.shape[1]):
-            if np.isnan(means[i,j]):
-                means[i,j] = gm.means_[0, distr_index]
-                variances[i,j] = gm.covariances_[0, distr_index]
-                distr_index +=1
-    
-    means = torch.from_numpy(means)
-    variances = torch.from_numpy(variances)
-    return means, variances
+
         
 # takes np array, randomly picks percentage of values p and introduces uncertainty there
 # allow different kernels for the values given by mice, then use the mixed distr append function
