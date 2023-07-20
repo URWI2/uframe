@@ -83,6 +83,7 @@ def uframe_from_array_mice(a: np.ndarray, p=0.1, mice_iterations=5, kernel="stat
 def generate_missing_values(complete_data, p):
     shape = complete_data.shape
     y = complete_data.copy()
+    np.random.seed(seed)
     missing = np.random.binomial(1, p, shape)
     
     y[missing.astype('bool')] = np.nan
@@ -90,9 +91,9 @@ def generate_missing_values(complete_data, p):
 
 
 def uframe_from_array_mice_2(a: np.ndarray, p=0.1, mice_iterations=5, kernel="stats.gaussian_kde",
-                           scaler= "min_max", cat_indices=[], **kwargs):
+                           scaler= "min_max", cat_indices=[],seed = None, **kwargs):
 
-    x, missing = generate_missing_values(a, p)
+    x, missing = generate_missing_values(a, p,seed)
 
     distr = {}
     cat_distr = {}
@@ -102,7 +103,7 @@ def uframe_from_array_mice_2(a: np.ndarray, p=0.1, mice_iterations=5, kernel="st
     kds = mf.ImputationKernel(
         x,
         save_all_iterations=True,
-        random_state=100)
+        random_state=seed)
 
     kds.mice(mice_iterations)
     for i in range(x.shape[0]):
