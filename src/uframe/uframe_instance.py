@@ -180,10 +180,23 @@ class uframe_instance():
         return np.array([list(dist.keys())[np.argmax([*dist.values()])] for dist in self.categorical]).reshape(1, -1)
 
     # sampling functions
-    def sample(self, n: int = 1, seed: Optional[int] = None):
-
-        return self.__align(self.sample_continuous(n, seed), self.sample_categorical(n, seed), n)
-
+    def sample(self, n: int = 1, seed: Optional[int] = None, threshold: Optional[float] = 1):
+        if threshold == 1:
+            return self.__align(self.sample_continuous(n, seed), self.sample_categorical(n, seed), n)
+        else: 
+            
+            samples = self.__align(self.sample_continuous(n, seed), self.sample_categorical(n, seed), n)
+            
+            pdfs = self.pdf(samples)
+            
+            sort_ind = np.argsort(pdfs, axis = 0)
+            sort_ind = np.squeeze(sort_ind[:])
+            sort_ind = sort_ind[sort_ind < round(n*threshold)]
+                
+            return samples[sort_ind,:]             
+                
+                
+                
     def sample_categorical(self, n: int = 1, seed: Optional[int] = None):
         if self.n_categorical == 0:
             return np.array([])
