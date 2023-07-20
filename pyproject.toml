@@ -1,3 +1,4 @@
+
 [build-system]
 requires = ["setuptools>=42.0", "wheel"]
 build-backend = "setuptools.build_meta"
@@ -24,7 +25,7 @@ no_implicit_reexport = true
 
 [project]
 name = "uframe"
-version = "0.0.1"
+version = "0.0.5"
 authors = [
   { name="Christian Amesoder", email="christian.amesoeder@informatik.uni-regensburg.de" },
   { name="Michael Hagn", email="michael.hagn@stud.uni-regensburg.de" }
