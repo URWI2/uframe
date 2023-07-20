@@ -90,7 +90,7 @@ def generate_missing_values(complete_data, p):
 
 
 def uframe_from_array_mice_2(a: np.ndarray, p=0.1, mice_iterations=5, kernel="stats.gaussian_kde",
-                           scaler= "min_max", cat_indices=[]):
+                           scaler= "min_max", cat_indices=[], **kwargs):
 
     x, missing = generate_missing_values(a, p)
 
@@ -163,7 +163,7 @@ def uframe_from_array_mice_2(a: np.ndarray, p=0.1, mice_iterations=5, kernel="st
 
         else:
             imp_array = imp_array.T
-            kde = KernelDensity(kernel=kernel, bandwidth=1.0).fit(imp_array)
+            kde = KernelDensity(kernel=kernel, **kwargs).fit(imp_array)
             #print("Dimension of kde", kde.n_features_in_)
 
         imp_distr = kde
