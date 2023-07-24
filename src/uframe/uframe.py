@@ -1078,23 +1078,10 @@ class uframe():
     
     def save(self, name="saved_uframe.pkl"):
             
-        d = vars(self)
-        print("Save the following dict:", vars(self))
         with open(name, 'wb') as f:
-            pickle.dump(d,f)
+            pickle.dump(self,f)
         return 
-    
-def load_uframe(file):
-    
-    with open(file, 'rb') as f:
-        d = pickle.load(f)
-    
-    frame = uframe()
-    
-    for key in d.keys():
-        setattr(frame, key, d[key])
-    
-    return frame 
+     
 
 def analysis_table(true, preds): 
     residues = true - preds
