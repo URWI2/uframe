@@ -80,18 +80,20 @@ def uframe_from_array_mice(a: np.ndarray, p=0.1, mice_iterations=5, kernel="stat
 
 
 
-def generate_missing_values(complete_data, p):
+def generate_missing_values(complete_data, p, seed):
     shape = complete_data.shape
     y = complete_data.copy()
     np.random.seed(seed)
-    missing = np.random.binomial(1, p, shape)
     
-    y[missing.astype('bool')] = np.nan
+    if p >0: 
+        missing = np.random.binomial(1, p, shape)
+        y[missing.astype('bool')] = np.nan
+        
     return y, missing
 
 
 def uframe_from_array_mice_2(a: np.ndarray, p=0.1, mice_iterations=5, kernel="stats.gaussian_kde",
-                           scaler= "min_max", cat_indices=[],seed = None, **kwargs):
+                           scaler= "min_max", cat_indices=[], seed = None, **kwargs):
 
     x, missing = generate_missing_values(a, p,seed)
 
@@ -157,8 +159,7 @@ def uframe_from_array_mice_2(a: np.ndarray, p=0.1, mice_iterations=5, kernel="st
         imp_array = np.concatenate(imp_arrays, axis=0)
         scaler = MinMaxScaler()
         imp_array = (scaler.fit_transform(imp_array.T)).T
-        #print("Shape of imp array", imp_array.shape)
-
+        
         if kernel == "stats.gaussian_kde":
             kde = stats.gaussian_kde(imp_array)
 
@@ -171,21 +172,15 @@ def uframe_from_array_mice_2(a: np.ndarray, p=0.1, mice_iterations=5, kernel="st
 
         distr[i] = imp_distr
 
-    #print(x)
     cont_indices = [i for i in range(x.shape[1]) if i not in cat_indices]
-    #print("Cont indices")
     scaler= MinMaxScaler()
     x_cont = scaler.fit_transform(x[:,cont_indices])
-    #print("X cont scaled", x_cont)
     x[:,cont_indices]=x_cont
-    #print("X after scaling", x, x[:,cat_indices])
-    #a[missing==1]=np.nan
+    
     u = uframe()
     
-    #print("Cat distr", cat_distr)
     u.append(new=[x, distr, cat_distr, index_dict])
 
-    #print("Col dtype", u._col_dtype)
     return u
 
 
