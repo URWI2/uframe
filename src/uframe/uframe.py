@@ -78,7 +78,7 @@ class uframe():
 
     """
 
-    def __init__(self):
+    def __init__(self,  new = None, colnames = None, rownames = None):
 
         self.data = []
         self._columns = []
@@ -87,16 +87,9 @@ class uframe():
         self._rownames = {}
         self._col_dtype = []
 
-        return
+        if new is not None: 
+            self.append(new = new, colnames = colnames, rownames = rownames)
 
-        """  
-        def mean_dev(true_data): 
-            ev = self.ev() 
-            mode = self.mode()
-            
-            for i in range(self.data):
-                """        
-            
             
             
             
