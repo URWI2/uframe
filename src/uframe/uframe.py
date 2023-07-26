@@ -1049,7 +1049,7 @@ class uframe():
             
     
     def __getitem__(self, index):
-        return self.data[index]
+        return uframe(new = self.data[index], colnames = self._columns, rownames = self._rows[index])
 
     # TO DO: function which takes i,j and returns element of uframe (need marginal distributions for that)
 
