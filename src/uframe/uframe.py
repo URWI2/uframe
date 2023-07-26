@@ -260,7 +260,10 @@ class uframe():
                     self.append_from_rv_cont(new, colnames)
                 elif len(new[0]) > 0 and isinstance(new[0][0], dict):
                     self.append_from_categorical(new, colnames)
-
+        
+        else: 
+            raise ValueError("Unknown type of new")
+            
         # sollte evtl. lieber die rownames in jeder append Funktion gesondert adressieren
         if isinstance(new, np.ndarray):
             return
