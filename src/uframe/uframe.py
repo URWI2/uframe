@@ -1049,7 +1049,7 @@ class uframe():
             
     
     def __getitem__(self, index):
-        return uframe(new = self.data[index], colnames = self._columns, rownames = self._rows[index])
+        return uframe(new = [self.data[i] for i in index], colnames = self._columns, rownames = self._rows[index])
 
     # TO DO: function which takes i,j and returns element of uframe (need marginal distributions for that)
 
@@ -1084,97 +1084,13 @@ def analysis_table(true, preds):
             
 
 if __name__ == "__main__":
-    a = uframe()
-
-    def measure(n):
-        m1 = np.random.normal(size=n)
-        m2 = np.random.normal(scale=0.5, size=n)
-        return m1 + m2, m1 - m2
-
-    m1, m2 = measure(2000)
-    m1, m2 = measure(2000)
-    values = np.vstack([m1, m2])
-    kernel = stats.gaussian_kde(values)
-
-    kernel_list = [kernel]
-
-    b = uframe()
-    b.append(kernel_list)
-    print(b.sample(n=8))
-    print(b.mode())
-    b.append(new=np.identity(2))
-    uframe_i = b.data[1]
-    print(type(uframe_i))
-    b.append([uframe_i])
-
-    b.append_from_samples([values, values, values], kernel='tophat')
-    print(len(b.data))
-    b.append(new=kernel_list)
-    b.append([uframe_i])
-
-    print(len(b.data))
-
-    c = uframe()
-    c_array = np.array([[1, np.nan, 3], [np.nan, np.nan, 2]])
-
-    kernel2 = stats.gaussian_kde(m1)
-
-    kernel3 = KernelDensity(kernel='gaussian', bandwidth=1.0).fit(values.T)
-
-    distr1 = scipy.stats.norm()
-
-    distr2 = scipy.stats.multivariate_normal()
-    # c.append_from_mix_with_distr(certain=c_array, distr={0: kernel2, 1:kernel3})
-
-    d = uframe()
-    d.append_from_rv_cont([distr1])
-    d.append([distr1])
-    d.append(distr2)
-    d.append_from_rv_cont([[distr1], distr1])
-
-    e = uframe()
-
-    mv = scipy.stats.multivariate_normal(mean=np.array([1, 1]))
-    mv2 = scipy.stats.multivariate_normal(mean=np.array([1, 1, 1]))
-
-    # e.append_from_rv_cont([mv2])
-    # e.append_from_rv_cont([[distr1,distr1, distr1]])
-    # e.append_from_rv_cont([[distr1, mv]])
-
-    e.append(mv2)
-    e.append([mv2])
-    e.append([[distr1, distr1, distr1]])
-    e.append([[distr1, distr1, distr1], mv2])
-
-    # mixed mit RV Distributionen
-
-    e = uframe()
-    e_array = np.array([[1, np.nan, 3], [np.nan, 2, np.nan], [0, np.nan, np.nan]])
-
-    e.append(new=[e_array, {0: distr1, 1: [distr1, distr1], 2: mv}])
-
-    f = uframe()
-    f.append([np.array([[1, np.nan], [1, 1]]), {0: [distr1]}])
-
-    g = uframe()
-    g.append_from_rv_cont([distr1])
-
-    # fehlend: columns tauschen - da gibt es noch Dinge zu klären
-
-    a = np.array([[1, 3.6, 4.2], [2.2, 1, 3], [7, 6, 5], [8, 8, 2]])
-    u = uframe_noisy_array(a, 0.1, True, 0.3)
-
-    h = uframe()
-    h.append([[{0: 0.3, 1: 0.4, 2: 0.3}], [{0: 0.8, 1: 0.2}]])
-
-    h = uframe()
-    a = np.array([[1, 2, np.nan], [1, 3, np.nan]])
-    h.append([a, {0: [{0: 0.7, 1: 0.3}], 1: [{0: 0.1, 3: 0.9}]}])
-    x_ohe = h.get_dummies()
+   
     
-    from scipy.stats import gamma, norm
-    uncertain = [uframe_instance(certain_data = np.array([2.1]), continuous = [norm(0.2,1), gamma(0.3)], indices = [[1],[0,2],[]]),
-                 uframe_instance(continuous = [norm(0.1,1), norm(0.3,0.7), gamma(1)], indices = [[],[1,0,2],[]])]
-    data = uframe()
-    data.append(uncertain)
-    print(data.sample())
+   
+   import scipy.stats as ss  
+   a = uf.uframe(new = [ss.norm(1), ss.norm(10), ss.norm(112)])
+   a[0:1].sample()
+    
+    
+    
+   
