@@ -1049,7 +1049,13 @@ class uframe():
             
     
     def __getitem__(self, index):
-        return uframe(new = [self.data[i] for i in index], colnames = self._columns, rownames = self._rows[index])
+        if type(index) == int: 
+            index = [index]
+        if type(index) == slice: 
+            step = 1 if index.step is None else index.step 
+            index = list(range(index.start, index.stop, step))
+        
+        return uframe(new = [self.data[i] for i in index], colnames = self._columns, rownames = [self._rows[i] for i in index])
 
     # TO DO: function which takes i,j and returns element of uframe (need marginal distributions for that)
 
