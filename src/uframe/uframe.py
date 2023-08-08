@@ -1089,8 +1089,15 @@ class uframe():
      
     def save(self, name="saved_uframe.pkl"):
             
+        l=[]
+        for i in range(len(self)): 
+            l.append([None if len(self.data[i].indices[0]) == 0 else self.data[i].certain_data, 
+                      None if len(self.data[i].indices[1]) == 0 else self.data[i].continuous,
+                      None if len(self.data[i].indices[2]) == 0 else self.data[i].categorical, 
+                      self.data[i].indices])
+            
         with open(name, 'wb') as f:
-            pickle.dump(self,f)
+            pickle.dump(l,f)
         return 
      
 
