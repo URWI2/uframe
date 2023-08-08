@@ -754,6 +754,15 @@ class uframe():
         return x
 
     @property
+    def shape(self): 
+        return self.sample().shape
+
+    @shape.setter 
+    def shape(self): 
+        print("Can't manually set shape")
+        
+        
+    @property
     def columns(self):
         return self._columns
 
