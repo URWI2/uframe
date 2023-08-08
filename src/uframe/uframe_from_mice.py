@@ -88,6 +88,8 @@ def generate_missing_values(complete_data, p, seed):
     if p >0: 
         missing = np.random.binomial(1, p, shape)
         y[missing.astype('bool')] = np.nan
+    else: 
+        missing = None
         
     return y, missing
 

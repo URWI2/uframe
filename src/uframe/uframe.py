@@ -1049,16 +1049,23 @@ class uframe():
             
     
     def __getitem__(self, index):
+                
         if type(index) == int: 
             index = [index]
         if type(index) == slice: 
-            step = 1 if index.step is None else index.step 
-            index = list(range(index.start, index.stop, step))
+            ret = uframe(new = self.data[index] , colnames = self._columns, rownames = self._rows[index])
+            index = range(0, len(self))[index]
+        else: 
+            ret = uframe(new = [self.data[i] for i in index], colnames = self._columns, rownames = [self._rows[i] for i in index])
+
+    
+        for i in index: 
+            if self.data[i]._mode_calculated():
+                ret.data[i]._set_mode(self.data[i].mode())
+
+        return ret                
         
-        return uframe(new = [self.data[i] for i in index], colnames = self._columns, rownames = [self._rows[i] for i in index])
-
-    # TO DO: function which takes i,j and returns element of uframe (need marginal distributions for that)
-
+   
     def add_cat_values(self, cat_value_dict):
         
         if hasattr(self, 'cat_values'):
@@ -1095,8 +1102,9 @@ if __name__ == "__main__":
    
    import scipy.stats as ss  
    a = uf.uframe(new = [ss.norm(1), ss.norm(10), ss.norm(112)])
-   a[0:1].sample()
-    
+   a[0].sample()
+   a[[0,2]].sample()
+   a[0:2].sample
     
     
    
