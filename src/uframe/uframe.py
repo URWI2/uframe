@@ -87,6 +87,7 @@ class uframe():
         self._rownames = {}
         self._col_dtype = []
 
+        
         if new is not None: 
             self.append(new = new, colnames = colnames, rownames = rownames)
 
@@ -146,7 +147,7 @@ class uframe():
                 #Residues Mode - True 
                 hist_fig, (hist_ax,table_ax) = plt.subplots(1, 2, figsize=(9, 3))
                 hist_ax.set_title('Residue of Mode, var:'+ str(self._colnames[i]))
-                    
+                
                 hist_ax.hist(mode[:,i]-true_data[:,i],**kwargs)
                 table_ax.axis('tight')
                 table_ax.axis('off')
@@ -1068,9 +1069,9 @@ class uframe():
             ret = uframe(new = [self.data[i] for i in index], colnames = self._columns, rownames = [self._rows[i] for i in index])
 
     
-        for i in index: 
-            if self.data[i]._mode_calculated():
-                ret.data[i]._set_mode(self.data[i].mode())
+        for i,j  in enumerate(index): 
+            if self.data[j]._mode_calculated():
+                ret.data[i]._set_mode(self.data[j].mode())
 
         return ret                
         
@@ -1116,11 +1117,4 @@ if __name__ == "__main__":
    
     
    
-   import scipy.stats as ss  
-   a = uf.uframe(new = [ss.norm(1), ss.norm(10), ss.norm(112)])
-   a[0].sample()
-   a[[0,2]].sample()
-   a[0:2].sample
-    
-    
    

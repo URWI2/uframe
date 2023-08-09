@@ -146,7 +146,7 @@ class uframe_instance():
         return self.__mode
     
     def _mode_calculated(self): 
-        return hasattr(self, "__mode")
+        return hasattr(self, f'_{self.__class__.__name__}__mode')
     
     def _set_mode(self, mode): 
         self.__mode = mode
