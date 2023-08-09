@@ -1113,8 +1113,6 @@ def analysis_table(true, preds):
             ["Diff Quantile", str(round(np.mean(np.abs(true_q - new_q)),2))]]
             
 
-if __name__ == "__main__":
-   
     
    
    
