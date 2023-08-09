@@ -11,6 +11,10 @@ import math
 import pickle 
 import matplotlib.pyplot as plt 
 from matplotlib.backends.backend_pdf import PdfPages
+from.utils import analysis_table
+import seaborn as sns
+import pandas as pd
+from itertools import compress
 
 #SOLANGE DAS NICHT FUNKTIONIERT; MÜSSEN WERTE IN KATEGORIELLEN SPALTEN GANZZAHLIG SEIN
 #nur Integer als Keys für kategorielle Verteilung zugelassen, muss append Funktion entsprechend anpassen 
@@ -97,17 +101,76 @@ class uframe():
    
     def analysis(self, true_data, save = False, **kwargs): 
         
+        _save = False
         if save is not False:
               if not type (save) == str:
                   save  = 'analysis_uframe'
               
               pdf = PdfPages(str(save)+'.pdf') 
               _save = True 
-          
+        
               
           
           #Mode analysis
         mode = self.mode()
+        ev = self.ev()
+        
+        
+        cont = [k == 'continuous' for k in self._col_dtype]
+        if 'continuous' in self._col_dtype: 
+            
+            colnames= []
+            for k in range(len(self._colnames)):
+                colnames.append(self._colnames[k])
+            
+            ax = sns.boxplot(pd.DataFrame(mode[:,cont], columns = list(compress(colnames,cont)))).set_title("Mode Distributions")
+            plt.show()
+            if _save == True: 
+                fig = ax.get_figure() 
+                fig.savefig(pdf, format = 'pdf')
+            
+            ax = sns.boxplot(pd.DataFrame(ev[:,cont], columns = list(compress(colnames,cont)))).set_title("EV Distributions")
+            plt.show()
+            if _save == True: 
+                fig = ax.get_figure() 
+                fig.savefig(pdf, format = 'pdf')
+            
+            
+        
+            dist_mode = np.linalg.norm(mode - true_data, axis = 1)
+            dist_ev = np.linalg.norm(ev - true_data, axis = 1)
+            
+            ax = sns.boxplot(pd.DataFrame(np.array([dist_mode,dist_ev]).transpose(), columns = ["Mode", "ev"])).set_title("Eucledean Distances to true value")
+            plt.show()
+            if _save == True: 
+                fig = ax.get_figure() 
+                fig.savefig(pdf, format = 'pdf')
+
+            res_mode = abs(mode - true_data).mean(axis = 0)
+            res_ev = abs(ev - true_data).mean(axis= 0)
+            
+            fig, ax = plt.subplots()
+            ax.bar([str(k) for k in list(compress(colnames,cont))], res_mode )
+            for i in range(len(list(compress(colnames,cont)))):
+                ax.text(i,round(res_mode[i],2),round(res_mode[i],2))
+            ax.set_title("Mode MAE per Variable")
+            plt.show()
+            if _save == True: 
+                fig.savefig(pdf, format = 'pdf')
+            
+            fig, ax = plt.subplots()
+            ax.bar([str(k) for k in list(compress(colnames,cont))], res_ev)
+            for i in range(len(list(compress(colnames,cont)))):
+                ax.text(i,round(res_ev[i],2),round(res_ev[i],2))
+            ax.set_title("EV MAE per Variable")
+            plt.show()
+            if _save == True: 
+                fig.savefig(pdf, format = 'pdf')
+            
+            
+   
+        
+        
         for i in range(len(self._columns)):
             if self._col_dtype[i]== 'continuous':
              
@@ -125,7 +188,7 @@ class uframe():
                   
           
           #EV analysis
-        ev = self.ev()
+
         for i in range(len(self._columns)):
             if self._col_dtype[i]== 'continuous':
               
@@ -170,7 +233,7 @@ class uframe():
                 if _save == True: 
                     hist_fig.savefig(pdf, format = 'pdf')        
                                   
-            
+        
             #Accuracy in case of categorical
             """
             if self._col_dtype[i]== 'categorical':
@@ -1102,16 +1165,6 @@ class uframe():
         return 
      
 
-def analysis_table(true, preds): 
-    residues = true - preds
-    true_q= np.array([sum(true[k]<true)/len(true) for k in range(len(true))])
-    new_q = np.array([sum(preds[k]<true)/len(true) for k in range(len(true))])
-
-    return [["Var",str(round(np.var(residues),2))],
-            ["MAE", str(round(np.mean(np.abs(residues)),2))],
-            ["RMSE", str(round(np.sqrt(np.mean(residues**2)),2))],
-            ["Diff Quantile", str(round(np.mean(np.abs(true_q - new_q)),2))]]
-            
 
     
    
