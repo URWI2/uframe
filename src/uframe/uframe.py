@@ -97,7 +97,45 @@ class uframe():
 
             
             
+    def analysis_frame(self, true_data, save = False, **kwargs): 
+        df = pd.DataFrame(data= np.nan, 
+                          columns = self._columns,
+                          index = pd.Index(["changed",
+                                            "changed_mode_MAE","changed_mode_RMSE",
+                                            "changed_mode_VAR","changed_mode_dif_quantile",
+                                            "overall_mode_MAE","overall_mode_RMSE",
+                                            "overall_mode_VAR","overall_mode_dif_quantile",
+                                            "changed_ev_MAE","changed_ev_RMSE",
+                                            "changed_ev_VAR","changed_ev_dif_quantile",
+                                            "overall_ev_MAE","overall_ev_RMSE",
+                                            "overall_ev_VAR","overall_ev_dif_quantile"]))
+        
+        
+        for i in range(len(df.columns)):
+            changed = self.mode()[:,i] != true_data[:,i]
+            df.iloc[0,i] = sum(changed)/len(self)
             
+            tab = analysis_table(true_data[changed,i], self.mode()[changed,i])
+            df.iloc[1:5,i] = [row[1] for row in tab]
+            
+            tab = analysis_table(true_data[:,i], self.mode()[:,i])
+            df.iloc[5:9,i] = [row[1] for row in tab]
+            
+            tab = analysis_table(true_data[changed,i], self.ev()[changed,i])
+            df.iloc[9:13,i] = [row[1] for row in tab]
+            
+            tab = analysis_table(true_data[:,i], self.ev()[:,i])
+            df.iloc[13:17,i] = [row[1] for row in tab]
+            
+        if save is not False:
+              if not type (save) == str:
+                  save  = 'analysis_uframe.csv'
+              else: 
+                  save = save + ".csv"
+            
+              df.to_csv(save, index=True)
+            
+        return df
    
     def analysis(self, true_data, save = False, **kwargs): 
         
@@ -140,7 +178,7 @@ class uframe():
             dist_mode = np.linalg.norm(mode - true_data, axis = 1)
             dist_ev = np.linalg.norm(ev - true_data, axis = 1)
             
-            ax = sns.boxplot(pd.DataFrame(np.array([dist_mode,dist_ev]).transpose(), columns = ["Mode", "ev"])).set_title("Eucledean Distances to true value")
+            ax = sns.boxplot(pd.DataFrame(np.array([dist_mode,dist_ev]).transpose(), columns = ["Mode", "ev"])).set_title("Euclidean Distances to true value")
             plt.show()
             if _save == True: 
                 fig = ax.get_figure() 
@@ -170,17 +208,21 @@ class uframe():
             
    
         
-        
+        #mode
         for i in range(len(self._columns)):
             if self._col_dtype[i]== 'continuous':
-             
+                
                 hist_fig, (hist_ax,hist_true) = plt.subplots(1, 2, figsize=(9, 3))
                 hist_ax.set_title('Mode, var: '+ str(self._colnames[i]))
-                    
-                hist_ax.hist(mode[:,i],**kwargs)
+                  
+                changed = mode[:,i] != true_data[:,i]
                 
+                #links
+                hist_ax.hist(mode[changed,i],**kwargs)
+                
+                #rechts
                 hist_true.set_title('True values, var:'+str(self._colnames[i]))
-                hist_true.hist(true_data[:,i],**kwargs)
+                hist_true.hist(true_data[changed,i],**kwargs)
                 
                 
                 if _save == True: 
@@ -194,12 +236,12 @@ class uframe():
               
                 hist_fig, (hist_ax, hist_true) = plt.subplots(1, 2, figsize=(9, 3))
                 hist_ax.set_title('EV, var:'+ str(self._colnames[i]))
+                changed = ev[:,i].round(4) != true_data[:,i].round(4)
                 
                 hist_true.set_title('True values, var:'+str(self._colnames[i]))
-                hist_true.hist(true_data[:,i],**kwargs)
+                hist_true.hist(true_data[changed ,i],**kwargs)
                 
-                
-                hist_ax.hist(ev[:,i],**kwargs)
+                hist_ax.hist(ev[changed ,i],**kwargs)
                 if _save == True: 
                     hist_fig.savefig(pdf, format = 'pdf')        
                       
@@ -211,25 +253,28 @@ class uframe():
                 hist_fig, (hist_ax,table_ax) = plt.subplots(1, 2, figsize=(9, 3))
                 hist_ax.set_title('Residue of Mode, var:'+ str(self._colnames[i]))
                 
-                hist_ax.hist(mode[:,i]-true_data[:,i],**kwargs)
+                changed = mode[:,i] != true_data[:,i]
+                
+                hist_ax.hist(mode[changed,i]-true_data[changed,i],)
                 table_ax.axis('tight')
                 table_ax.axis('off')
-                table_ax.table(analysis_table(true_data[:,i], ev[:,i]), loc = "center")
+                table_ax.table(analysis_table(true_data[changed,i], ev[changed,i]), loc = "center")
                 
                 
                 if _save == True: 
                     hist_fig.savefig(pdf, format = 'pdf')        
                   
+                    changed = ev[:,i].round(4) != true_data[:,i].round(4)
+                    
                 #Residues EV-True
                 hist_fig, (hist_ax,table_ax) = plt.subplots(1, 2, figsize=(9, 3))
                 hist_ax.set_title('Residue of EV, var:'+ str(self._colnames[i]))
-                residues = ev[:,i]-true_data[:,i]    
-                hist_ax.hist(residues,**kwargs)
+                residues = ev[changed,i]-true_data[changed,i]    
+                hist_ax.hist(residues,)
                 table_ax.axis('tight')
                 table_ax.axis('off')
-                table_ax.table(analysis_table(true_data[:,i], ev[:,i]), loc = "center")
-                                
-                
+                table_ax.table(analysis_table(true_data[changed,i], ev[changed,i]), loc = "center")
+                  
                 if _save == True: 
                     hist_fig.savefig(pdf, format = 'pdf')        
                                   
@@ -755,7 +800,7 @@ class uframe():
                 samples = np.array(samples).T
 
             if kernel == 'stats.gaussian_kde':
-                kde = stats.gaussian_kde(values)
+                kde = stats.gaussian_kde(samples)
             elif kernel in ['gaussian', 'tophat', 'epanechnikov', 'exponential', 'linear', 'cosine']:
                 samples = samples.T
                 kde = KernelDensity(kernel=kernel, bandwidth=1.0).fit(samples)
@@ -934,9 +979,9 @@ class uframe():
 
         raise NotImplementedError()
 
-    def mode(self):
+    def mode(self, **kwargs):
 
-        return np.concatenate([inst.mode() for inst in self.data], axis=0)
+        return np.concatenate([inst.mode(**kwargs) for inst in self.data], axis=0)
 
     def sample(self, n=1, seed=None, threshold = 1):
 

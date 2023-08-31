@@ -140,9 +140,9 @@ class uframe_instance():
         self.n_categorical = len(self.categorical)
 
     # mode functions
-    def mode(self):
+    def mode(self, **kwargs):
         if not self._mode_calculated():
-            self.__mode =  self.__align(self.__mode_continuous(), self.__mode_categorical())
+            self.__mode =  self.__align(self.__mode_continuous(**kwargs), self.__mode_categorical())
         return self.__mode
     
     def _mode_calculated(self): 
@@ -151,25 +151,25 @@ class uframe_instance():
     def _set_mode(self, mode): 
         self.__mode = mode
         
-    def __mode_continuous(self):
+    def __mode_continuous(self, **kwargs):
         return np.array([])
 
-    def __mode_scipy_kde(self):
-        opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x), np.zeros(self.n_continuous))
+    def __mode_scipy_kde(self, **kwargs):
+        opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x), np.zeros(self.n_continuous),**kwargs)
         return opt.x.reshape(1, -1)
 
-    def __mode_sklearn_kde(self):
-        opt = scipy.optimize.basinhopping(lambda x: -self.continuous.score_samples(x.reshape(1, -1)), np.zeros(self.n_continuous))
+    def __mode_sklearn_kde(self, **kwargs):
+        opt = scipy.optimize.basinhopping(lambda x: -self.continuous.score_samples(x.reshape(1, -1)), np.zeros(self.n_continuous), **kwargs)
         return opt.x.reshape(1, -1)
 
-    def __mode_scipy_rv_c(self):
+    def __mode_scipy_rv_c(self, **kwargs):
         if (issubclass(type(self.continuous), scipy.stats._multivariate.multi_rv_generic) or
                 issubclass(type(self.continuous), scipy.stats._multivariate.multi_rv_frozen)):
 
-            opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x), self.continuous.mean)
+            opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x), self.continuous.mean, **kwargs)
             return opt.x.reshape(1, -1)
 
-        opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x), self.continuous.mean())
+        opt = scipy.optimize.basinhopping(lambda x: -self.continuous.pdf(x), self.continuous.mean(), **kwargs)
         return opt.x.reshape(1, -1)
 
     def __mode_dist_list(self):

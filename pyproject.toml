@@ -25,7 +25,7 @@ no_implicit_reexport = true
 
 [project]
 name = "uframe"
-version = "0.0.15"
+version = "0.0.19"
 authors = [
   { name="Christian Amesoder", email="christian.amesoeder@informatik.uni-regensburg.de" },
   { name="Michael Hagn", email="michael.hagn@stud.uni-regensburg.de" }
@@ -38,7 +38,25 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+dependencies = [
+  'scipy >= 1.9.3',
+  'scikit-learn >= 1.2.0',
+  'numpy >= 1.23.5',
+  'matplotlib',
+  'miceforest',
+]
 
+[project.optional-dependencies]
+tests = [
+  'pytest-cov ',
+  'pytest >= 7.3.1 ',
+  'coverage>=4.5.4',
+  'tox >=3.14.0',
+  'flake8>=3.7.8',
+  'wheel>=0.33.6',
+  'pip>=19.2.3',
+
+]
 
 [project.urls]
 "Homepage" = "https://github.com/URWI2/uframe"
