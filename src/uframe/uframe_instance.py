@@ -293,6 +293,13 @@ class uframe_instance():
         cat = self.pdf_categorical(k[self.indices[2]])
         cont = self.pdf_continuous(k[self.indices[1]])
         
+        if isinstance(cont, np.float64): 
+            cont = [cont]
+
+        if isinstance(cat, np.float64): 
+            cat = [cat]
+
+        
         return np.prod([*cat,*cont])
         
     def pdf_categorical(self,k): 
