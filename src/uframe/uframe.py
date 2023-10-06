@@ -11,7 +11,6 @@ import math
 import pickle 
 import matplotlib.pyplot as plt 
 from matplotlib.backends.backend_pdf import PdfPages
-from.utils import analysis_table
 import seaborn as sns
 import pandas as pd
 from itertools import compress
