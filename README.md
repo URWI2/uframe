@@ -8,6 +8,8 @@
 
 Introducing **uframe**: A Flexible and Powerful Framework for Handling Uncertain Data
 
+As of today, uframe is still in development. It is a working prototype and planned features, bugfixes, tests and documentation are partly still missing. 
+
 **uframe** is a comprehensive Python package designed to simplify and expedite research involving uncertain data from various sources.
 By seamlessly integrating Probability Density Functions (PDFs) into its core functionality, uframe empowers users to manipulate and analyze uncertain data with ease.
 
