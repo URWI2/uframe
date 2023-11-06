@@ -148,10 +148,11 @@ class uframe_instance():
     def _mode_calculated(self): 
         return hasattr(self, f'_{self.__class__.__name__}__mode')
     
-    
+
     def var(self, n:int  = 50, seed: Optional[int] = None): 
-        return self.np.var(self.sample(n=n, seed = seed), axis = 0)
+        return np.var(self.sample(n=n, seed = seed), axis = 0)
         
+    
     def _set_mode(self, mode): 
         self.__mode = mode
         

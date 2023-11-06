@@ -251,7 +251,9 @@ class uframe():
                 
                 if _save == True: 
                     hist_fig.savefig(pdf, format = 'pdf')        
-                      
+                   
+                    
+                   
                 #analysis of variances 
                 
                
