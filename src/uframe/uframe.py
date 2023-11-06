@@ -983,9 +983,13 @@ class uframe():
 
     def mode(self, **kwargs):
 
-        return np.concatenate([inst.mode(**kwargs) for inst in self.data], axis=0)
+        return np.concatenate([inst.mode(**kwargs) for inst in self.data], axis = 0)
 
-    def sample(self, n=1, seed=None, threshold = 1):
+    def var(self, n:int = 50, seed: Optional[int] = None):
+ 
+        return np.vstack([inst.var(n = n, seed = seed) for inst in self.data])
+
+    def sample(self, n:int =1, seed: Optional[int] = None, threshold = 1):
 
         return np.concatenate([inst.sample(n = n, seed = seed, threshold = threshold) for inst in self.data], axis=0)
 
