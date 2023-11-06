@@ -14,7 +14,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 import seaborn as sns
 import pandas as pd
 from itertools import compress
-from .helper import analysis_table
+from .helper import analysis_table, analysis_table_distr
 from typing import Optional, List, Dict
 
 
@@ -210,72 +210,72 @@ class uframe():
             
    
         
-        #mode
+
         for i in range(len(self._columns)):
             if self._col_dtype[i]== 'continuous':
-                
-                hist_fig, (hist_ax,hist_true) = plt.subplots(1, 2, figsize=(9, 3))
-                hist_ax.set_title('Mode, var: '+ str(self._colnames[i]))
-                  
+                #mode
+                hist_fig, axs = plt.subplots(4, 2, figsize=(11.69,8.27))
                 changed = mode[:,i] != true_data[:,i]
                 
                 #links
-                hist_ax.hist(mode[changed,i],**kwargs)
+                axs[0,0].set_title('Mode, Variable: '+ str(self._colnames[i]))
+                axs[0,0].hist(mode[changed,i])
+                axs[1,0].axis('tight')
+                axs[1,0].axis('off')
+                axs[1,0].table(analysis_table_distr(mode[changed,i],true_data[changed,i]), loc = "center")
+                
                 
                 #rechts
-                hist_true.set_title('True values, var:'+str(self._colnames[i]))
-                hist_true.hist(true_data[changed,i],**kwargs)
-                
-                
-                if _save == True: 
-                    hist_fig.savefig(pdf, format = 'pdf')        
-                  
-          
-          #EV analysis
+                axs[0,1].set_title('True values, Variable:'+str(self._colnames[i]))
+                axs[0,1].hist(true_data[changed,i])
+                axs[1,1].axis('tight')
+                axs[1,1].axis('off')
+                axs[1,1].table(analysis_table_distr(true_data[changed,i],mode[changed,i]), loc = "center")
+                        
 
-        for i in range(len(self._columns)):
-            if self._col_dtype[i]== 'continuous':
-              
-                hist_fig, (hist_ax, hist_true) = plt.subplots(1, 2, figsize=(9, 3))
-                hist_ax.set_title('EV, var:'+ str(self._colnames[i]))
+                #EV analysis
                 changed = ev[:,i].round(4) != true_data[:,i].round(4)
+
+                axs[2,0].set_title('EV, Variable:'+ str(self._colnames[i]))
+                axs[2,0].hist(ev[changed ,i])
+                axs[3,0].axis('tight')
+                axs[3,0].axis('off')
+                axs[3,0].table(analysis_table_distr(ev[changed,i],true_data[changed,i]), loc = "center")
+
                 
-                hist_true.set_title('True values, var:'+str(self._colnames[i]))
-                hist_true.hist(true_data[changed ,i],**kwargs)
+                axs[2,1].set_title('True values, Variable:'+str(self._colnames[i]))
+                axs[2,1].hist(true_data[changed ,i])
+                axs[3,1].axis('tight')
+                axs[3,1].axis('off')
+                axs[3,1].table(analysis_table_distr(true_data[changed,i],ev[changed,i]), loc = "center")
                 
-                hist_ax.hist(ev[changed ,i],**kwargs)
                 if _save == True: 
                     hist_fig.savefig(pdf, format = 'pdf')        
                       
+                #analysis of variances 
+                
+               
+            
           
-
-        for i in range(len(self._columns)):
-            if self._col_dtype[i]== 'continuous':
-                #Residues Mode - True 
-                hist_fig, (hist_ax,table_ax) = plt.subplots(1, 2, figsize=(9, 3))
-                hist_ax.set_title('Residue of Mode, var:'+ str(self._colnames[i]))
+                #Residues Mode
+                hist_fig, axs = plt.subplots(2, 2, figsize=(11.69,8.27))
+                axs[0,0].set_title('Residue of Mode, Variable:'+ str(self._colnames[i]))
                 
                 changed = mode[:,i] != true_data[:,i]
+                axs[0,0].hist(mode[changed,i]-true_data[changed,i],)
+                axs[1,0].axis('tight')
+                axs[1,0].axis('off')
+                axs[1,0].table(analysis_table(true_data[changed,i], mode[changed,i]), loc = "center")
                 
-                hist_ax.hist(mode[changed,i]-true_data[changed,i],)
-                table_ax.axis('tight')
-                table_ax.axis('off')
-                table_ax.table(analysis_table(true_data[changed,i], ev[changed,i]), loc = "center")
                 
-                
-                if _save == True: 
-                    hist_fig.savefig(pdf, format = 'pdf')        
-                  
-                    changed = ev[:,i].round(4) != true_data[:,i].round(4)
-                    
-                #Residues EV-True
-                hist_fig, (hist_ax,table_ax) = plt.subplots(1, 2, figsize=(9, 3))
-                hist_ax.set_title('Residue of EV, var:'+ str(self._colnames[i]))
+                #Residues EV
+                changed = ev[:,i].round(4) != true_data[:,i].round(4)
+                axs[0,1].set_title('Residue of EV, var:'+ str(self._colnames[i]))
                 residues = ev[changed,i]-true_data[changed,i]    
-                hist_ax.hist(residues,)
-                table_ax.axis('tight')
-                table_ax.axis('off')
-                table_ax.table(analysis_table(true_data[changed,i], ev[changed,i]), loc = "center")
+                axs[0,1].hist(residues,)
+                axs[1,1].axis('tight')
+                axs[1,1].axis('off')
+                axs[1,1].table(analysis_table(true_data[changed,i], ev[changed,i]), loc = "center")
                   
                 if _save == True: 
                     hist_fig.savefig(pdf, format = 'pdf')        
