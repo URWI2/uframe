@@ -14,6 +14,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 import seaborn as sns
 import pandas as pd
 from itertools import compress
+from .helper import analysis_table
 
 #SOLANGE DAS NICHT FUNKTIONIERT; MÜSSEN WERTE IN KATEGORIELLEN SPALTEN GANZZAHLIG SEIN
 #nur Integer als Keys für kategorielle Verteilung zugelassen, muss append Funktion entsprechend anpassen 
