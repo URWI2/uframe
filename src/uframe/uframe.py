@@ -15,6 +15,8 @@ import seaborn as sns
 import pandas as pd
 from itertools import compress
 from .helper import analysis_table
+from typing import Optional, List, Dict
+
 
 #SOLANGE DAS NICHT FUNKTIONIERT; MÜSSEN WERTE IN KATEGORIELLEN SPALTEN GANZZAHLIG SEIN
 #nur Integer als Keys für kategorielle Verteilung zugelassen, muss append Funktion entsprechend anpassen 
@@ -987,9 +989,9 @@ class uframe():
 
         return np.concatenate([inst.sample(n = n, seed = seed, threshold = threshold) for inst in self.data], axis=0)
 
-    def ev(self):
+    def ev(self, n: int = 1, seed: Optional[int] = None):
         
-        evs = [inst.ev() for inst in self.data]
+        evs = [inst.ev(n,seed) for inst in self.data]
         if 'categorical' not in self._col_dtype:
             
             #print([(ev, type(ev)) for ev in evs])
