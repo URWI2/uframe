@@ -48,7 +48,7 @@ class uframe_instance():
             List of dictionaries with each dictionary representing the probability distribution of a categorical variable.
 
         indices : list
-            list of indices which indicates the order in which samples and mode values should be returned.
+            list of lists of indices which indicates the order in which samples and mode values should be returned. It is haped the following: [[indices certain], [indices continuous], [indices categorical]]
         """
 
         certain_data = np.array([]) if certain_data is None else certain_data

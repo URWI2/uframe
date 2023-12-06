@@ -14,7 +14,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 import seaborn as sns
 import pandas as pd
 from itertools import compress
-from .helper import analysis_table, analysis_table_distr
+from .helper import analysis_table, analysis_table_distr, plot_pca, KL 
 from typing import Optional, List, Dict
 
 
@@ -35,7 +35,8 @@ class uframe():
     A class used for storing and working with uncertain data.
 
     ...
-
+    
+    Parameters
     ----------
     data : list
         A list of data instances of class uframe_instance
@@ -71,7 +72,8 @@ class uframe():
 
     get_dummies()
         Performs one hot encoding on all categorical columns in the data.
-        
+    
+    var
 
     update():
         Update specific instance, not immediately relevant
@@ -157,143 +159,238 @@ class uframe():
         
         
         cont = [k == 'continuous' for k in self._col_dtype]
-        if 'continuous' in self._col_dtype: 
-            
-            colnames= []
-            for k in range(len(self._colnames)):
-                colnames.append(self._colnames[k])
-            
-            ax = sns.boxplot(pd.DataFrame(mode[:,cont], columns = list(compress(colnames,cont)))).set_title("Mode Distributions")
-            plt.show()
-            if _save == True: 
-                fig = ax.get_figure() 
-                fig.savefig(pdf, format = 'pdf')
-            
-            ax = sns.boxplot(pd.DataFrame(ev[:,cont], columns = list(compress(colnames,cont)))).set_title("EV Distributions")
-            plt.show()
-            if _save == True: 
-                fig = ax.get_figure() 
-                fig.savefig(pdf, format = 'pdf')
-            
-            
-        
-            dist_mode = np.linalg.norm(mode - true_data, axis = 1)
-            dist_ev = np.linalg.norm(ev - true_data, axis = 1)
-            
-            ax = sns.boxplot(pd.DataFrame(np.array([dist_mode,dist_ev]).transpose(), columns = ["Mode", "ev"])).set_title("Euclidean Distances to true value")
-            plt.show()
-            if _save == True: 
-                fig = ax.get_figure() 
-                fig.savefig(pdf, format = 'pdf')
-
-            res_mode = abs(mode - true_data).mean(axis = 0)
-            res_ev = abs(ev - true_data).mean(axis= 0)
-            
-            fig, ax = plt.subplots()
-            ax.bar([str(k) for k in list(compress(colnames,cont))], res_mode )
-            for i in range(len(list(compress(colnames,cont)))):
-                ax.text(i,round(res_mode[i],2),round(res_mode[i],2))
-            ax.set_title("Mode MAE per Variable")
-            plt.show()
-            if _save == True: 
-                fig.savefig(pdf, format = 'pdf')
-            
-            fig, ax = plt.subplots()
-            ax.bar([str(k) for k in list(compress(colnames,cont))], res_ev)
-            for i in range(len(list(compress(colnames,cont)))):
-                ax.text(i,round(res_ev[i],2),round(res_ev[i],2))
-            ax.set_title("EV MAE per Variable")
-            plt.show()
-            if _save == True: 
-                fig.savefig(pdf, format = 'pdf')
-            
             
    
         
 
-        for i in range(len(self._columns)):
+        for i in range(len(self.columns)):
             if self._col_dtype[i]== 'continuous':
                 #mode
                 hist_fig, axs = plt.subplots(4, 2, figsize=(11.69,8.27))
-                changed = mode[:,i] != true_data[:,i]
                 
+                changed = ev[:,i].round(4) != true_data[:,i].round(4)
+
                 #links
-                axs[0,0].set_title('Mode, Variable: '+ str(self._colnames[i]))
-                axs[0,0].hist(mode[changed,i])
+                axs[0,0].set_title('Mode, Variable: '+ str(self.columns[i]))
+                axs[0,0].hist(mode[changed,i], **kwargs)
                 axs[1,0].axis('tight')
                 axs[1,0].axis('off')
-                axs[1,0].table(analysis_table_distr(mode[changed,i],true_data[changed,i]), loc = "center")
+                axs[1,0].table(analysis_table_distr(mode[changed,i],true_data[changed,i],"(Mode|True)"), loc = "center")
                 
                 
                 #rechts
-                axs[0,1].set_title('True values, Variable:'+str(self._colnames[i]))
-                axs[0,1].hist(true_data[changed,i])
+                axs[0,1].set_title('True values, Variable:'+str(self.columns[i]))
+                axs[0,1].hist(true_data[changed,i], **kwargs)
                 axs[1,1].axis('tight')
                 axs[1,1].axis('off')
-                axs[1,1].table(analysis_table_distr(true_data[changed,i],mode[changed,i]), loc = "center")
+                axs[1,1].table(analysis_table_distr(true_data[changed,i],mode[changed,i],"(True|Mode)"), loc = "center")
                         
 
                 #EV analysis
                 changed = ev[:,i].round(4) != true_data[:,i].round(4)
 
-                axs[2,0].set_title('EV, Variable:'+ str(self._colnames[i]))
-                axs[2,0].hist(ev[changed ,i])
+                axs[2,0].set_title('EV, Variable:'+ str(self.columns[i]))
+                axs[2,0].hist(ev[changed ,i], **kwargs)
                 axs[3,0].axis('tight')
                 axs[3,0].axis('off')
-                axs[3,0].table(analysis_table_distr(ev[changed,i],true_data[changed,i]), loc = "center")
+                axs[3,0].table(analysis_table_distr(ev[changed,i],true_data[changed,i],"(EV|True)"), loc = "center")
 
                 
-                axs[2,1].set_title('True values, Variable:'+str(self._colnames[i]))
-                axs[2,1].hist(true_data[changed ,i])
+                axs[2,1].set_title('True values, Variable:'+str(self.columns[i]))
+                axs[2,1].hist(true_data[changed ,i], **kwargs)
                 axs[3,1].axis('tight')
                 axs[3,1].axis('off')
-                axs[3,1].table(analysis_table_distr(true_data[changed,i],ev[changed,i]), loc = "center")
+                axs[3,1].table(analysis_table_distr(true_data[changed,i],ev[changed,i],"(True|EV)"), loc = "center")
                 
                 if _save == True: 
                     hist_fig.savefig(pdf, format = 'pdf')        
                    
                     
-                   
+                hist_fig, axs = plt.subplots(4, 2, figsize=(11.69,8.27))
+
+                    
                 #analysis of variances 
+                var= self.var(n = 100)
+                axs[0,0].set_title('Variances, Variable: '+ str(self.columns[i]))
+                axs[0,0].hist(var[changed,i], **kwargs)
+                axs[0,1].axis('tight')
+                axs[0,1].axis('off')
+                axs[0,1].table([["Mean",str(round(np.mean(var[changed,i]),2))],
+                               ["Var",str(round(np.var(var[changed,i]),2))]], loc = "center")
                 
-               
-            
-          
-                #Residues Mode
-                hist_fig, axs = plt.subplots(2, 2, figsize=(11.69,8.27))
-                axs[0,0].set_title('Residue of Mode, Variable:'+ str(self._colnames[i]))
+
+                mae_mode_to_m = np.mean(abs(mode[changed,i]-true_data[changed,i] ))/np.mean(true_data[changed,i])
+                mae_ev_to_m = np.mean(abs(ev[changed,i]-true_data[changed,i] ))/np.mean(true_data[changed,i])
+                var_to_m = np.mean(var[changed,i])/np.mean(true_data[changed,i])
                 
-                changed = mode[:,i] != true_data[:,i]
-                axs[0,0].hist(mode[changed,i]-true_data[changed,i],)
                 axs[1,0].axis('tight')
                 axs[1,0].axis('off')
-                axs[1,0].table(analysis_table(true_data[changed,i], mode[changed,i]), loc = "center")
+                other_measures = axs[1,0].table([["Ratios of Variable:"+str(self.columns[i]),""],
+                                ["MAE_EV/mean_true", str(round(mae_ev_to_m ,2))],
+                                ["MAE_Mode/mean_true", str(round(mae_mode_to_m ,2))],
+                                ["mean_var/mean_true", str(round(var_to_m,2))],
+                                ["Uncertain Values/Total",str(sum(changed)) +"/"+str(len(changed))+ ", "+str(round(100*sum(changed)/len(changed),1))+"%"]],
+                               loc = "center") 
+
+                axs[1,1].axis('tight')
+                axs[1,1].axis('off')
+                
+                other_measures.auto_set_font_size(False)
+                other_measures.set_fontsize(12)
+                other_measures.auto_set_column_width([0,1])
+                
+                
+                changed = mode[:,i] != true_data[:,i]
+                
+                #Residues Mode
+                axs[2,0].set_title('Residue of Mode, Variable: '+ str(self.columns[i]))
+                axs[2,0].hist(mode[changed,i]-true_data[changed,i])
+                axs[3,0].axis('tight')
+                axs[3,0].axis('off')
+                axs[3,0].table(analysis_table(true_data[changed,i], mode[changed,i]), loc = "center")
                 
                 
                 #Residues EV
                 changed = ev[:,i].round(4) != true_data[:,i].round(4)
-                axs[0,1].set_title('Residue of EV, var:'+ str(self._colnames[i]))
+                axs[2,1].set_title('Residue of EV, var:'+ str(self.columns[i]))
                 residues = ev[changed,i]-true_data[changed,i]    
-                axs[0,1].hist(residues,)
-                axs[1,1].axis('tight')
-                axs[1,1].axis('off')
-                axs[1,1].table(analysis_table(true_data[changed,i], ev[changed,i]), loc = "center")
-                  
+                axs[2,1].hist(residues, **kwargs)
+                axs[3,1].axis('tight')
+                axs[3,1].axis('off')
+                axs[3,1].table(analysis_table(true_data[changed,i], ev[changed,i]), loc = "center")
+                
+                plt.show()
                 if _save == True: 
                     hist_fig.savefig(pdf, format = 'pdf')        
-                                  
-        
-            #Accuracy in case of categorical
-            """
-            if self._col_dtype[i]== 'categorical':
-                hist_fig, hist_ax = plt.subplots(1, 1, figsize=(9, 3))
-                hist_ax.set_title('Accuracy of Mode, var:'+ str(self._colnames[i]))
+                       
                     
-                hist_ax.hist(mode[:,i] == true_data[:,i],**kwargs)
-                  
+                #Comparison to undeleted data to find potentioal Biases 
+                
+                hist_fig, axs = plt.subplots(3, 2, figsize=(11.69,8.27), constrained_layout=True)
+                """
+                axs[0,0].set_title('EV, Variable: '+ str(self.columns[i]))
+                axs[0,0].hist(ev[changed,i])
+                axs[0,1].set_title('Mode, Variable: '+ str(self.columns[i]))
+                axs[0,1].hist(mode[changed,i])
+                """
+                axs[0,0].set_title('True Values, ucertain, Variable: '+ str(self.columns[i]))
+                axs[0,0].hist(true_data[changed,i])
+                axs[0,1].set_title('True Values, certain, Variable: '+ str(self.columns[i]))
+                axs[0,1].hist(true_data[~changed,i])
+                
+                
+                bins = np.linspace(min(true_data[:,i]), max(true_data[:,i]), 30)
+                axs[1,0].set_title('Comparison, certain & uncertain, Variable: '+ str(self.columns[i]))
+                axs[1,0].hist([true_data[~changed,i], true_data[changed,i]], bins, label=['certain instances', 'uncertain instances'])
+                axs[1,0].legend(loc='upper right', fontsize = "5")
+                
+                sns.kdeplot(mode[changed,i], bw_adjust=0.5, label='Mode', ax = axs[1,1])
+                sns.kdeplot(ev[changed,i], bw_adjust=0.5, label='EV', ax = axs[1,1])
+                sns.kdeplot(true_data[~changed,i], bw_adjust=0.5, label='True certain', ax = axs[1,1])
+                sns.kdeplot(true_data[changed,i], bw_adjust=0.5, label='True uncertain', ax = axs[1,1])
+                axs[1,1].set_title('Comparison of KDE\'s '+ str(self.columns[i]))
+                axs[1,1].set_xlabel('Value')
+                axs[1,1].legend(loc='upper right', fontsize = "5")
+                
+                axs[2,0].axis('tight')
+                axs[2,0].axis('off')
+                try: 
+                    ks_statistic, p_value = scipy.stats.ks_2samp(true_data[changed,i], true_data[~changed,i])
+                    p_value = str(round(p_value,4))
+                except: 
+                    ks_statistic, p_value = "NA", "NA"
+
+                tab1= axs[2,0].table([["KS (True Certain | True Uncertain)", p_value],
+                                ["KL(True Certain|True Uncertain)",str(KL(true_data[~changed,i],true_data[changed,i]))],
+                                ["KL(Mode|True Uncertain)",str(KL(mode[changed,i],true_data[changed,i]))],
+                                ["KL(EV|True Uncertain)",str(KL(ev[changed,i],true_data[changed,i]))]], loc = "center")
+                
+
+                axs[2,1].axis('tight')
+                axs[2,1].axis('off')
+                
+                tab1.auto_set_font_size(False)
+                tab1.set_fontsize(14)
+                tab1.auto_set_column_width([0,1])
+                
+                tab = axs[2,1].table([["Mean, Mode uncertain", str(round(np.mean(mode[changed,i]),2))],
+                                ["Mean, EV uncertain", str(round(np.mean(ev[changed,i]),2))],
+                                ["Mean, true uncertain ", str(round(np.mean(true_data[changed,i]),2))],
+                                ["Mean, true certain",str(round(np.mean(true_data[~changed,i]),2))],
+                                ["Mean, true certain & mode uncertain", str(round(np.mean(mode[:,i]),2))],
+                                ["Mean, true certain & EV uncertain", str(round(np.mean(ev[:,i]),2))],
+                                
+                                ["Var, Mode uncertain", str(round(np.var(mode[changed,i]),2))],
+                                ["Var, EV uncertain", str(round(np.var(ev[changed,i]),2))],
+                                ["Var, true uncertain", str(round(np.var(true_data[changed,i]),2))],
+                                ["Var, true certain", str(round(np.var(true_data[~changed,i]),2))],
+                                ["Var, true certain & mode uncertain",str(round(np.var(mode[:,i]),2))],
+                                ["Var, true certain & ev uncertain",str(round(np.var(ev[:,i]),2))]
+                                ], loc = "center")
+                #axs[3,1].table.auto_set_font_size(False)
+                tab.auto_set_font_size(False)
+                tab.set_fontsize(14)
+                tab.auto_set_column_width([0,1])
+                plt.show()
                 if _save == True: 
                     hist_fig.savefig(pdf, format = 'pdf')        
-            """
+                
+                
+                
+            #Accuracy in case of categorical
+        """
+        if self._col_dtype[i]== 'categorical':
+            hist_fig, hist_ax = plt.subplots(1, 1, figsize=(9, 3))
+            hist_ax.set_title('Accuracy of Mode, var:'+ str(self._colnames[i]))
+                
+            hist_ax.hist(mode[:,i] == true_data[:,i],**kwargs)
+              
+            if _save == True: 
+                hist_fig.savefig(pdf, format = 'pdf')        
+        """
+        
+        if 'continuous' in self._col_dtype: 
+            colnames= []
+            for k in range(len(self.columns)):
+                colnames.append(self.columns[k])
+            
+            
+            fig, axs = plt.subplots(4, 1, figsize=(11.69,8.27))
+            
+            sns.boxplot(pd.DataFrame(mode[:,cont], columns = list(compress(colnames,cont))), ax = axs[0]).set_title("Mode Distributions")
+            sns.boxplot(pd.DataFrame(ev[:,cont], columns = list(compress(colnames,cont))), ax = axs[1]).set_title("EV Distributions")
+            
+            
+            
+            res_mode = abs(mode - true_data).mean(axis = 0)
+            res_ev = abs(ev - true_data).mean(axis= 0)
+            
+            axs[2].bar([str(k) for k in list(compress(colnames,cont))], res_mode )
+            for i in range(len(list(compress(colnames,cont)))):
+                axs[2].text(i,round(res_mode[i],2),round(res_mode[i],2))
+            axs[2].set_title("Mode MAE per Variable")
+       
+            axs[3].bar([str(k) for k in list(compress(colnames,cont))], res_ev)
+            for i in range(len(list(compress(colnames,cont)))):
+                axs[3].text(i,round(res_ev[i],2),round(res_ev[i],2))
+            axs[3].set_title("EV MAE per Variable")
+            
+            plt.show()
+            if _save == True: 
+                fig.savefig(pdf, format = 'pdf')
+            
+                
+            fig, axs = plt.subplots(2, 1, figsize=(11.69,8.27))
+            dist_mode = np.linalg.norm(mode - true_data, axis = 1)
+            dist_ev = np.linalg.norm(ev - true_data, axis = 1)
+            
+            sns.boxplot(pd.DataFrame(np.array([dist_mode,dist_ev]).transpose(), columns = ["Mode", "ev"]), ax = axs[0]).set_title("Euclidean Distances to true value")
+            
+            plot_pca(true_data, axs = axs[1], uncertain = changed)
+            
+            plt.show()
+            if _save == True: 
+                fig.savefig(pdf, format = 'pdf')
         
         pdf.close()
         plt.close()
@@ -856,6 +953,17 @@ class uframe():
         print(self.array_rep())
         return ""
 
+
+    def indices_uncertain(self): 
+        indices = [np.array(inst.indices[0]) for inst in self.data]
+        uncertain = np.ones(self.shape)
+        for i in range(len(indices)):
+            if len(indices[i])>0: uncertain[i, indices[i]] = 0
+        
+        return uncertain.astype(np.bool)
+        
+        
+        
     def array_rep(self):
 
         x = np.zeros((len(self.data), len(self.columns)), dtype=np.float64)
@@ -995,7 +1103,10 @@ class uframe():
 
         return np.concatenate([inst.sample(n = n, seed = seed, threshold = threshold) for inst in self.data], axis=0)
 
-    def ev(self, n: int = 1, seed: Optional[int] = None):
+    def ev(self, n: Optional[int] = None, seed: Optional[int] = None):
+        
+        
+        if n is None: n = 50 * self.shape[1]
         
         evs = [inst.ev(n,seed) for inst in self.data]
         if 'categorical' not in self._col_dtype:
