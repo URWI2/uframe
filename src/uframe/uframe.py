@@ -1314,6 +1314,33 @@ class uframe():
         
         return 
     
+    def ML(self, points, y): 
+        
+        if self.shape[1] != points.shape[1]: 
+            raise ValueError(f"Wrong Dimension of given points")
+        if self.shape[0] != y.shape[0]:
+            raise ValueError(f"Wrong count of y values")
+            
+        pdfs = self.pdf(points)
+
+        a = [pdfs[y==y_value].sum(axis=0) for y_value in np.unique(y)]
+        
+        dic = {}
+        for y_value in np.unique(y): 
+            dic[y_value] = pdfs[y==y_value].sum(axis=0)
+        
+        
+        s = np.zeros(points.shape[0])
+        for key in dic.keys():
+            s += dic[key]
+            
+        for key in dic.keys():
+            dic[key] = dic[key]/s
+            
+        return dic
+
+
+
     def pdf(self, points): 
     
         if type(points) == list: 
