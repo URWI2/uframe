@@ -16,8 +16,7 @@ def load_uframe(file):
                                          categorical = l[i][2],
                                          indices = l[i][3]))
 
-    uf = ufr()
-    uf.append_from_uframe_instance(instances)
+    uf = ufr(instances)
 
     return(uf)
 

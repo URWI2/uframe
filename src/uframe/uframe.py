@@ -1314,6 +1314,16 @@ class uframe():
         
         return 
     
+    def pdf(self, points): 
+    
+        if type(points) == list: 
+            points = np.array(points)
+        
+        ret = [self.data[i].pdf(points)for i in range(len(self.data))]
+
+        ret = np.stack([arr.squeeze() for arr in ret])       
+        
+        return ret
      
     def save(self, name="saved_uframe.pkl"):
             
