@@ -32,58 +32,59 @@ from typing import Optional, List, Dict
 
 class uframe():
     """
-    A class used for storing and working with uncertain data.
+    A class for managing uncertain data within a structured framework.
 
-    ...
-    
+    This class provides a comprehensive interface for handling data with uncertainties, allowing for operations such as sampling, computing modal and expected values, and one-hot encoding categorical data. It is built around a collection of `uframe_instance` objects, each representing an individual data point with uncertainty.
+
     Parameters
     ----------
     data : list
-        A list of data instances of class uframe_instance
-    columns: list
-        List of column names
-    rows: list
-        List of row names
-    _colnames: dict
-        A dictionary with column names as keys and the corresponding indices in
-        the data as values
-    _rownames: dict
-        A dictionary with row names as keys and the corresponding indices in
-        the data as values
-    col_dtype: list
-        A list of the datatypes of the columns
-    _col_dtype: dict
-        A dictionary with column names as keys and the corresponding data
-        types as values
+        A list of `uframe_instance` objects representing the uncertain data points.
+    columns : list
+        List of column names corresponding to the attributes of the data instances.
+    rows : list
+        List of row names, typically representing individual data points or observations.
+    _colnames : dict
+        A dictionary mapping column names to their respective indices within the data.
+    _rownames : dict
+        A dictionary mapping row names to their respective indices within the data.
+    col_dtype : list
+        List indicating the data types of each column, which could include continuous, categorical, and certain data types.
+    _col_dtype : dict
+        A dictionary mapping column names to their specific data types.
 
     Methods
     -------
     modal()
-        Returns a numpy array of the data, where all uncertain values are
-        replaced with their modal values.
+        Computes and returns a numpy array of the data, replacing uncertain values with their modal (most likely) values.
 
-    sample(n = 1, seed = None)
-        Samples n samples for each instance and returns one numpy array,
-        where n samples from each instance are below each other.
+    sample(n=1, seed=None)
+        Generates 'n' samples for each uncertain data instance and compiles them into a single numpy array, with samples from each instance arranged sequentially.
 
     ev()
-        Returns a numpy array where all uncertain values are replaced with
-        their expected values
+        Calculates and returns a numpy array where uncertain values are replaced by their expected values (means), providing a deterministic representation of the data.
 
     get_dummies()
-        Performs one hot encoding on all categorical columns in the data.
-    
-    var
+        Applies one-hot encoding to all categorical columns within the data, facilitating the use of the data for machine learning and statistical analysis.
 
-    update():
-        Update specific instance, not immediately relevant
+    append(new=None)
+        Appends new rows to the data, which can be either certain or uncertain. The new rows initially have to be numpy arrays, with support for other formats planned for future development.
 
-    append(new = None):
-        Append new rows to the data which can be either certain or uncertain.
-        In place. New rows have to be numpy arrays at first, later add
-        different sources of uncertain new rows.
+    Notes
+    -----
+    - The `uframe` class is designed with flexibility in mind, accommodating various types of uncertainty (e.g., probabilistic, intervals) through the `uframe_instance` objects.
+    - It aims to simplify the process of working with uncertain data by providing intuitive methods for common data manipulation and analysis tasks.
 
-
+    Examples
+    --------
+    >>> # Assuming uframe_instance objects are already defined as `inst1`, `inst2`, etc.
+    >>> uf = uframe(data=[inst1, inst2], columns=['Feature1', 'Feature2'], rows=['Row1', 'Row2'])
+    >>> uf.modal()
+    numpy array of modal values
+    >>> uf.sample(n=10, seed=42)
+    numpy array of samples
+    >>> uf.ev()
+    numpy array of expected values
     """
 
     def __init__(self,  new = None, colnames = None, rownames = None):
@@ -142,7 +143,38 @@ class uframe():
         return df
    
     def analysis(self, true_data, save = False, **kwargs): 
+        """
+        Perform analysis comparing uncertain data predictions with true data.
         
+        This method generates histograms and statistical tables for continuous variables, comparing the distributions of predicted values (using mode and expected value methods) with true data values. It allows for a detailed examination of how well the uncertain data handling techniques perform and identifies potential biases or discrepancies.
+        
+        Parameters
+        ----------
+        true_data : np.array
+            The true data values to compare against. This array should have the same shape and order as the data contained within the uframe instance.
+        save : bool or str, default=False
+            If True, the generated plots and tables are saved to a PDF file. If a string is provided, it is used as the filename for the output PDF. If False, the analysis results are simply displayed without saving.
+        **kwargs : dict
+            Additional keyword arguments passed to plotting functions, allowing for customization of histograms and other visual elements.
+        
+        Returns
+        -------
+        None
+            This method does not return any value. Its primary output is the visual and statistical analysis conducted on the mode and expected value predictions compared to the true data.
+        
+        Notes
+        -----
+        - The method internally uses matplotlib and seaborn for generating plots. Ensure these libraries are installed and properly configured in your environment.
+        - If `save` is True or a filename string, the method generates a PDF file containing all the plots and tables produced during the analysis. This file is saved in the current working directory unless a specific path is included in the filename.
+        
+        Examples
+        --------
+        >>> uf = uframe(data=[...])  # Assuming a uframe instance is already created
+        >>> true_data = np.array([...])  # True data values for comparison
+        >>> uf.analysis(true_data, save="analysis_results")
+        This example performs the analysis and saves the results to "analysis_results.pdf".
+        
+        """
         _save = False
         if save is not False:
               if not type (save) == str:
@@ -1092,19 +1124,127 @@ class uframe():
         raise NotImplementedError()
 
     def mode(self, **kwargs):
-
+        """
+        Compute the modal values for all uncertain data instances within the uframe.
+    
+        This method iterates over each `uframe_instance` contained in the `uframe` and computes their modal values. The modal value is considered the most likely value for each uncertain instance, providing a deterministic approximation of the data.
+    
+        Parameters
+        ----------
+        **kwargs : dict
+            Additional keyword arguments that are passed to the `mode` method of each `uframe_instance`. These arguments can be used to customize the computation of modal values for individual instances.
+    
+        Returns
+        -------
+        np.array
+            A numpy array containing the modal values for all data instances within the uframe. The array is structured such that each row corresponds to the modal values of a single `uframe_instance`.
+    
+        Notes
+        -----
+        - This method relies on the `mode` method of the `uframe_instance` class, which must be capable of computing modal values for a given instance of uncertain data.
+        - The returned array provides a convenient, deterministic representation of the uncertain data, suitable for visualization, analysis, or further statistical processing.
+    
+        Examples
+        --------
+        >>> uf = uframe(data=[...])  # Assuming a uframe object is already created with uncertain data instances
+        >>> modal_values = uf.mode()
+        This example computes the modal values for all uncertain data instances within the uframe and stores the result in `modal_values`.
+        """
         return np.concatenate([inst.mode(**kwargs) for inst in self.data], axis = 0)
 
     def var(self, n:int = 50, seed: Optional[int] = None):
- 
+        """
+        Calculate the variance for all uncertain data instances in the uframe.
+    
+        This method aggregates the variances of each uncertain data instance (`uframe_instance`) within the `uframe`. It is particularly useful for understanding the spread or dispersion of the uncertainty across the data instances.
+    
+        Parameters
+        ----------
+        n : int, default=50
+            The number of samples to generate for each uncertain data instance to estimate their variance. Increasing this number can improve the accuracy of the variance estimation but also increases computational load.
+        seed : Optional[int], default=None
+            Seed for the random number generator to ensure reproducibility of the computation. If None, the randomness is unpredictable and the results may vary on each call.
+    
+        Returns
+        -------
+        np.array
+            A numpy array containing the variance values for all uncertain data instances within the uframe. Each element in the array corresponds to the variance of an individual `uframe_instance`.
+    
+        Notes
+        -----
+        - This method provides a measure of the uncertainty's variability and can be a critical component of risk assessment and decision-making processes.
+        - The calculation is based on sampling from the uncertain distributions of each data instance, hence the importance of the `n` parameter for controlling the trade-off between computational efficiency and estimation accuracy.
+    
+        Examples
+        --------
+        >>> uf = uframe(data=[...])  # Assuming a uframe object is already created with uncertain data instances
+        >>> variances = uf.var(n=100, seed=42)
+        This example computes the variances for all uncertain data instances within the uframe, using 100 samples for the estimation and a seed for reproducibility, and stores the result in `variances`.
+        """
         return np.vstack([inst.var(n = n, seed = seed) for inst in self.data])
 
     def sample(self, n:int =1, seed: Optional[int] = None, threshold = 1):
-
+        """
+        Generate samples from each uncertain data instance in the uframe.
+    
+        This method iterates over each `uframe_instance` contained in the `uframe`, generating a specified number of samples from each. These samples can be used for stochastic simulation, uncertainty propagation analysis, or further statistical processing.
+    
+        Parameters
+        ----------
+        n : int, default=1
+            The number of samples to generate for each uncertain data instance. Specifies how many samples are drawn to represent the uncertainty of each instance.
+        seed : Optional[int], default=None
+            Seed for the random number generator to ensure reproducibility of the generated samples. If None, the sampling process is stochastic and may yield different results on each call.
+        threshold : int, default=1
+            A threshold parameter that could potentially be used to control the sampling process or filter the generated samples based on certain criteria. The implementation details and usage of this parameter may vary.
+    
+        Returns
+        -------
+        np.array
+            A numpy array containing the generated samples for all data instances within the `uframe`. The array is structured such that each row corresponds to a set of samples from a single `uframe_instance`.
+    
+        Notes
+        -----
+        - The generation of samples is a fundamental aspect of working with uncertain data, allowing for the exploration of possible outcomes and the assessment of variability within the data.
+        - The `seed` parameter plays a crucial role in ensuring that the sampling process can be replicated, which is vital for experiments that require consistency across runs.
+    
+        Examples
+        --------
+        >>> uf = uframe(data=[...])  # Assuming a `uframe` object is already created with uncertain data instances
+        >>> samples = uf.sample(n=10, seed=42)
+        This example generates 10 samples for each uncertain data instance within the `uframe`, using a seed for reproducibility, and stores the result in `samples`.
+        """
         return np.concatenate([inst.sample(n = n, seed = seed, threshold = threshold) for inst in self.data], axis=0)
 
     def ev(self, n: Optional[int] = None, seed: Optional[int] = None):
-        
+        """
+        Calculate the expected values for all uncertain data instances in the uframe.
+    
+        This method iterates over each `uframe_instance` contained in the `uframe` and computes their expected values, typically the mean of the uncertain distribution. For instances with categorical data, the expected value for categorical variables is handled separately.
+    
+        Parameters
+        ----------
+        n : Optional[int], default=None
+            The number of samples to generate for estimating the expected value. A higher number may improve the accuracy of the estimation for continuous distributions. If None, a default value based on the number of columns is used.
+        seed : Optional[int], default=None
+            Seed for the random number generator to ensure reproducibility of the results. If None, the randomness is unpredictable.
+    
+        Returns
+        -------
+        np.array
+            A numpy array containing the expected values for all data instances within the uframe. For instances without categorical data, this is a straightforward array of means. For instances with categorical data, the method handles these separately and integrates them into the returned array where applicable.
+    
+        Notes
+        -----
+        - The expected value calculation is particularly useful for providing a deterministic approximation of uncertain data, which can be beneficial for analysis, visualization, and further statistical processing.
+        - The handling of categorical data involves specific treatment due to the nature of categorical distributions, which may not have a direct notion of 'mean' in the traditional sense.
+    
+        Examples
+        --------
+        >>> uf = uframe(data=[...])  # Assuming a uframe object is already created with uncertain data instances
+        >>> expected_values = uf.ev(n=100, seed=42)
+        This example calculates the expected values for all uncertain data instances within the uframe, using 100 samples for estimation and a seed for reproducibility, and stores the result in `expected_values`.
+        """
         
         if n is None: n = 50 * self.shape[1]
         
@@ -1182,7 +1322,31 @@ class uframe():
     # performs One Hot Encoding of categorical columns after filling uncertain values by sampling/ mode/ ev
     # return columns in some way?
     def get_dummies(self, method='sample', samples_per_distrib=1):
-
+        """
+        Perform one-hot encoding on all categorical columns in the uframe data.
+    
+        This method identifies categorical variables within the `uframe` and transforms them into a one-hot encoded format. One-hot encoding is a process that converts categorical variables into a form that could be provided to ML algorithms to do a better job in prediction.
+    
+        Parameters
+        ----------
+        None
+    
+        Returns
+        -------
+        uframe
+            A new `uframe` instance where all categorical columns have been replaced with their one-hot encoded representations. The transformation is applied across all `uframe_instance` objects contained within the original `uframe`, ensuring that the structure of the data is maintained while categorical variables are appropriately encoded.
+    
+        Notes
+        -----
+        - The method ensures that the original `uframe` object remains unchanged, providing a transformed copy as its return value. This behavior supports immutability and functional programming paradigms.
+        - One-hot encoding expands the dimensionality of the data, where each unique category value in a column is transformed into a new binary column (1s and 0s), indicating the presence of the category.
+    
+        Examples
+        --------
+        >>> uf = uframe(data=[...])  # Assuming a `uframe` object is already created with uncertain data instances, including categorical data
+        >>> uf_encoded = uf.get_dummies()
+        This example transforms the categorical variables within the `uframe` into a one-hot encoded format, facilitating their use in machine learning models and other analytical methods that require numerical input.
+        """
         # do sampling, ev, modal
         # then iterate over the columns and for categorical
         if method == 'sample':
@@ -1315,7 +1479,37 @@ class uframe():
         return 
     
     def ML(self, points, y): 
-        
+        """
+        Perform maximum likelihood estimation (MLE) based on given points and observed outcomes.
+    
+        This method applies the principle of maximum likelihood estimation to estimate the parameters of a probability distribution that make the observed data (categorized by 'y') most likely. It calculates the likelihood of each point belonging to different categories based on the probability density function (PDF) values across all uncertain data instances within the `uframe`. The goal is to find the parameter values that maximize the likelihood function, indicating the most probable parameters given the observed data.
+    
+        Parameters
+        ----------
+        points : np.array
+            An array of points for which the likelihood of belonging to each category defined by 'y' is to be estimated. The dimensionality of 'points' should match that of the data within the `uframe`.
+        y : np.array
+            An array of observed outcomes or categories for the given points. Each element in 'y' corresponds to a category label for the point at the same index in 'points'.
+    
+        Returns
+        -------
+        dict
+            A dictionary where keys are the unique values of 'y' (category labels) and values are arrays representing the estimated likelihood of each point belonging to the corresponding category. This probabilistic classification is based on the maximum likelihood principle.
+    
+        Notes
+        -----
+        - Maximum Likelihood Estimation (MLE) is a statistical method used for estimating the parameters of a probability distribution or statistical model. The principle behind MLE is to choose the parameter values that maximize the likelihood function, which measures the probability of observing the given sample data under different parameter values of the model.
+        - MLE is fundamental in statistical inference, providing estimators that converge to the true parameter values as the sample size increases (consistency) and achieve the lowest possible variance among all estimators in large samples (efficiency).
+        - This method leverages the PDF values computed for the uncertain data instances, using these to assess the likelihood of each observed outcome, making it a powerful tool for classification and analysis in the presence of uncertainty.
+    
+        Examples
+        --------
+        >>> uf = uframe(data=[...])  # Assuming a `uframe` object is already created
+        >>> points = np.array([[1, 2], [3, 4], [5, 6]])  # Example points for classification
+        >>> y = np.array([0, 1, 0])  # Observed categories for the points
+        >>> likelihoods = uf.ML(points, y)
+        This example performs maximum likelihood estimation to classify each point into categories, based on the observed data and the uncertain model represented by the `uframe`.
+        """
         if self.shape[1] != points.shape[1]: 
             raise ValueError(f"Wrong Dimension of given points")
         if self.shape[0] != y.shape[0]:
@@ -1342,7 +1536,33 @@ class uframe():
 
 
     def pdf(self, points): 
+        """
+        Calculate the probability density function (PDF) for given points across all uncertain data instances.
     
+        This method computes the PDF values for a set of given points, evaluating the likelihood of each point under the uncertainty distributions represented by the `uframe_instance` objects within the `uframe`. It's particularly useful for statistical analysis and understanding the distribution of uncertain data.
+    
+        Parameters
+        ----------
+        points : np.array or list
+            An array or list of points for which the PDF values are to be computed. The points should match the dimensionality and structure of the uncertain data instances within the `uframe`. If provided as a list, it will be converted into a numpy array for processing.
+    
+        Returns
+        -------
+        np.array
+            An array of PDF values corresponding to the input points. The array's shape will depend on the number of points and the structure of the `uframe` data. Each value represents the likelihood of the corresponding point under the distributions encapsulated by the `uframe`.
+    
+        Notes
+        -----
+        - The method supports vectorized operations, allowing for efficient computation of PDF values for multiple points simultaneously.
+        - For uncertain data instances with multiple dimensions, the points should be provided in a compatible format that matches these dimensions.
+    
+        Examples
+        --------
+        >>> uf = uframe(data=[...])  # Assuming a `uframe` object is already created with uncertain data instances
+        >>> points = np.array([[1, 2], [3, 4]])  # Points for which PDF values are needed
+        >>> pdf_values = uf.pdf(points)
+        This example calculates the PDF values for the specified points across all uncertain data instances within the `uframe`, illustrating how to assess the likelihood of these points.
+        """
         if type(points) == list: 
             points = np.array(points)
         
@@ -1353,7 +1573,31 @@ class uframe():
         return ret
      
     def save(self, name="saved_uframe.pkl"):
-            
+        """
+        Serialize and save the current state of the uframe object to a file.
+    
+        This method allows for the persistence of the `uframe` object, including all its data and configurations, by saving it to a specified file. The saved file can later be reloaded to restore the `uframe` object to its saved state, facilitating use cases like model checkpointing, data sharing, or analysis continuation at a later time.
+    
+        Parameters
+        ----------
+        name : str, default='saved_uframe.pkl'
+            The name of the file to which the `uframe` object will be saved. If not specified, the default filename 'saved_uframe.pkl' is used. It is recommended to use the '.pkl' extension to indicate that the file is a pickle file.
+    
+        Returns
+        -------
+        None
+    
+        Notes
+        -----
+        - The method uses Python's pickle module for serialization, which is efficient but not secure against erroneous or maliciously constructed data. Never unpickle data received from an untrusted or unauthenticated source.
+        - It is advisable to specify an absolute path for the `name` parameter if you want to save the file to a specific directory.
+    
+        Examples
+        --------
+        >>> uf = uframe(data=[...])  # Assuming a `uframe` object is already created
+        >>> uf.save(name='my_uframe_data.pkl')
+        This example saves the `uframe` object to a file named 'my_uframe_data.pkl', allowing it to be easily reloaded in future sessions for further use.
+        """
         l=[]
         for i in range(len(self)): 
             l.append([None if len(self.data[i].indices[0]) == 0 else self.data[i].certain_data, 

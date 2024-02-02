@@ -406,7 +406,36 @@ class uframe_instance():
         return np.column_stack(sampels)
 
     def ev(self, n: Optional[int] = 50, seed: Optional[int] = None):
-
+        """
+        Calculate the expected value of the uncertain instance.
+    
+        This method generates samples from the uncertain instance and computes their mean. If the instance has categorical data, the expected value for categorical variables is set to None, and categorical distributions are appended separately.
+    
+        Parameters
+        ----------
+        n : Optional[int], default=50
+            The number of samples to generate for calculating the expected value. A higher number of samples may lead to a more accurate estimation but will require more computation.
+        seed : Optional[int], default=None
+            Seed for the random number generator to ensure reproducibility. If None, the randomness is unpredictable.
+    
+        Returns
+        -------
+        np.array | List[Union[np.array, List[Dict[str, float]]]]
+            The expected value of the uncertain instance. For purely numeric data, this is a numpy array of the mean values. For instances with categorical data, the return value is a list containing the numpy array of mean values for continuous and certain data (with categorical means set to None) and the list of categorical distributions.
+    
+        Notes
+        -----
+        - The expected value for categorical data is not directly computed since categorical data represents discrete categories without a direct notion of 'average'. The method returns the categorical distributions themselves for further analysis.
+        - This method caches its result. Subsequent calls with the same parameters will return the cached value without recomputation.
+    
+        Examples
+        --------
+        >>> u_instance = uframe_instance(certain_data=np.array([1, 2, 3]),
+                                         continuous=scipy.stats.norm(loc=0, scale=1),
+                                         categorical=[{"cat1": 0.5, "cat2": 0.5}])
+        >>> u_instance.ev()
+        [array([1., 2., 3., mean of samples]), [{'cat1': 0.5, 'cat2': 0.5}]]
+        """
         if hasattr(self,"_uframe_instance__ev"):
             return self.__ev
 
@@ -456,6 +485,38 @@ class uframe_instance():
 
 
     def pdf(self, k): 
+        """
+        Compute the probability density function (PDF) for the given input(s).
+    
+        This method calculates the PDF values for each input in 'k' considering all uncertainties (continuous, categorical) within the instance. It leverages the 'pdf_elementwise' method to compute the PDF for each element.
+    
+        Parameters
+        ----------
+        k : np.array | List
+            The input value(s) for which the PDF should be computed. Can be a list or a numpy array. The input should match the structure and dimensions of the uncertain data instance, i.e., it should have the same number of elements as there are uncertain and certain variables in the instance.
+    
+        Returns
+        -------
+        np.array
+            An array of PDF values corresponding to each input in 'k'. The output is reshaped to ensure compatibility with further processing, typically having one PDF value per input scenario.
+    
+        Notes
+        -----
+        - The method automatically handles inputs in list format by converting them to numpy arrays.
+        - It reshapes the input 'k' to ensure it matches the expected dimensionality of the uncertain instance, facilitating element-wise PDF computation.
+        - The 'pdf_elementwise' method is called internally to compute the PDF for individual elements based on their uncertainty type (continuous or categorical).
+    
+        Examples
+        --------
+        >>> u_instance = uframe_instance(certain_data=np.array([1, 2, 3]),
+                                         continuous=scipy.stats.norm(loc=0, scale=1))
+        >>> u_instance.pdf([0, 1, 2])
+        array([[PDF value]])
+        
+        >>> u_instance.pdf(np.array([[0, 1, 2], [3, 4, 5]]))
+        array([[PDF value for [0, 1, 2]],
+               [PDF value for [3, 4, 5]]])
+        """
         if type(k) == list: 
             k = np.array(k)
         

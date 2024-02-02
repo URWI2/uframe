@@ -65,6 +65,40 @@ def uframe_from_array_sim(X: np.ndarray, p=0.5,
                           std_method = 'fix',
                           seed  = None):  
     
+    """
+    Create a uframe object from a numpy array by simulating uncertain data.
+
+    This function simulates uncertainty within the given numpy array `X` by introducing variability based on a specified proportion `p`. The resulting data, characterized by simulated uncertainty, is then encapsulated into a `uframe` object for further analysis and processing.
+
+    Parameters
+    ----------
+    X : np.ndarray
+        The input data array to simulate uncertainty within. Should be a 2D numpy array where rows represent individual observations and columns represent features.
+    p : float, default=0.5
+        The proportion of uncertainty to simulate in the data. This could define the variance of the noise introduced or the proportion of values to replace with simulated uncertainty, depending on the implementation.
+    **kwargs : dict
+        Additional keyword arguments that may control aspects of the uncertainty simulation, such as the distribution of simulated noise, seed for reproducibility, among others.
+
+    Returns
+    -------
+    uframe
+        A `uframe` object containing the data with simulated uncertainty. This object is ready for analysis, allowing for the exploration of uncertainty's impact on data interpretation and decision-making processes.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> X = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    >>> uf_sim = uframe_from_array_sim(X, p=0.3)
+    
+    # Example: Using the resulting uframe for analysis
+    >>> print(uf_sim.sample(100))  # Generate 100 samples for each data instance to analyze the simulated uncertainty
+    >>> print(uf_sim.ev())         # Calculate expected values to understand the central tendency of the simulated uncertain data
+
+    Notes
+    -----
+    - The specific mechanism of uncertainty simulation (e.g., noise addition, value replacement) should be detailed in the implementation to guide users on the nature of simulated uncertainty within the data.
+    - The `p` parameter's interpretation and the effect of additional keyword arguments (`**kwargs`) might vary based on the implementation specifics, highlighting the flexibility of this function in simulating various uncertainty scenarios.
+    """
     
     X_missing, missing = generate_missing_values(complete_data = X, p = p, seed = seed , method = missing_method)
     
@@ -108,7 +142,50 @@ def uframe_from_array_mice(a: np.ndarray, p=0.1,
                              cat_indices=[], 
                              seed = None, 
                              **kwargs):
+    """
+    Create a uframe object from a numpy array with missing data imputed using the MICE algorithm.
 
+    This function applies MICE (Multiple Imputation by Chained Equations) to impute missing values in the given array, then encapsulates the imputed data along with imputation distributions for each missing value into a `uframe` object.
+
+    Parameters
+    ----------
+    a : np.ndarray
+        The input data array with missing values to be imputed. Should be a 2D numpy array.
+    p : float, default=0.1
+        The proportion of missingness if the input array `a` does not already contain missing values.
+    mice_iterations : int, default=5
+        The number of iterations the MICE algorithm will run to impute missing values.
+    kernel : str, default="gaussian"
+        The kernel to use for density estimation of continuous variables. Supported values include "gaussian" for Gaussian kernels.
+    method : str, default='binomial'
+        The method to generate missing values artificially if `a` does not contain missing values. Default is 'binomial'.
+    cat_indices : list, default=[]
+        List of column indices in `a` that are categorical. These columns will be treated differently during the imputation process.
+    seed : int, optional
+        Seed for the random number generator to ensure reproducibility.
+    **kwargs : dict
+        Additional keyword arguments for the MICE imputation function.
+
+    Returns
+    -------
+    uframe
+        A `uframe` object containing the imputed data along with imputation distributions for each missing entry, ready for further analysis.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> a = np.array([[1, np.nan, 3], [4, 5, np.nan], [7, 8, 9]])
+    >>> uf = uframe_from_array_mice(a, mice_iterations=10, cat_indices=[2], seed=42)
+    
+    # Example: Using the resulting uframe for analysis
+    >>> print(uf.sample(100))  # Generate 100 samples for statistical analysis
+    >>> print(uf.ev())         # Calculate expected values for the uframe
+
+    Notes
+    -----
+    - MICE is particularly useful for datasets where the assumption of data being missing at random (MAR) is reasonable.
+    - The choice of `kernel` and the number of `mice_iterations` can significantly impact the quality of imputation.
+    """
     x, missing = generate_missing_values(a, p, seed, method = method)
     
     distr = {}
