@@ -12,43 +12,114 @@ from typing import Optional, List, Dict
 
 class uframe_instance():
     """
-       A class used to represent an singel uncertain data instance.
-
-       ...
-
-       Attributes
-       ----------
-       continuous : class
-           A class describing the underlying uncertainty.
-       certain_data : np.array
-           Numpy array of certain values
-       indices : [list,list]
-           associations of indices to continuous and certain data
-
-       Methods
-       -------
-       sample(n = 1, seed = None)
-           Samples n samples from the uncertain instance
-
-       mode()
-           Uses an optimizer to finde the mode value of this instance
-
+    uframe_instance
+    ===============
+    
+    The `uframe_instance` class is designed to represent a single uncertain data instance within the `uframe` package. 
+    It encapsulates continuous, categorical, and certain data along with their associations, providing a structured way 
+    to handle uncertain data.
+    
+    Attributes
+    ----------
+    continuous : Various types (e.g., scipy.stats._kde.gaussian_kde, scipy.stats)
+        A class or model that describes the underlying continuous uncertainty. This could be a probability 
+        distribution or any statistical model capable of representing continuous uncertainty.
+    certain_data : np.array
+        A numpy array containing certain (i.e., not uncertain) values associated with the data instance.
+    indices : [list, list]
+        A list of lists indicating the associations of indices to continuous, categorical, and certain data.
+    
+    Methods
+    -------
+    sample(n=1, seed=None)
+        Samples `n` instances from the uncertain data, allowing for reproducibility through the `seed` parameter.
+    mode()
+        Finds the mode value of the uncertain instance using an optimizer.
+    
+    Constructor Parameters
+    ----------------------
+    certain_data : Optional[npt.ArrayLike]
+        Certain data instances represented as a 1D numpy array.
+    continuous : scipy.stats._kde.gaussian_kde | scipy.stats and other compatible types
+        Describes the uncertain variables of the instance using Scipy Kernel Density Estimation or similar models.
+    categorical : Optional[List[Dict[str, float]]]
+        A list of dictionaries, each representing the probability distribution of a categorical variable.
+    indices : Optional[List[List[int]]]
+        Specifies the order in which samples and mode values should be returned. It is shaped as 
+        [[indices certain], [indices continuous], [indices categorical]].
+    
+    Detailed Methods
+    ----------------
+    sample(n=1, seed=None)
+        Purpose:
+            To generate `n` samples from the uncertain data instance.
+        Parameters:
+            n : int, optional
+                The number of samples to generate. Default is 1.
+            seed : int, optional
+                An optional seed for the random number generator to ensure reproducibility.
+        Returns:
+            np.array: An array of sampled values.
+    
+    mode()
+        Purpose:
+            To find the mode of the uncertain instance using optimization techniques.
+        Returns:
+            The mode value(s) of the instance.
+    
+    Additional Features:
+        The class includes methods for dealing with the probability density function (PDF) of the uncertain data,
+        specifically `pdf_elementwise`, `pdf_categorical`, and `pdf_continuous`. These methods provide the 
+        functionality to evaluate the PDFs for the different types of data encapsulated within an instance.
+    
+    This class is a fundamental part of the `uframe` package, offering a structured approach to handling and analyzing 
+    uncertain data across various applications. It abstracts the complexity of managing different uncertainty types 
+    and their computations, providing a unified interface for sampling and optimization tasks.
     """
+
 
     def __init__(self, certain_data: Optional[npt.ArrayLike] = None, continuous=None,
                  categorical: Optional[List[Dict[str, float]]] = None, indices: Optional[List[List[int]]] = None):
         """
+        Initializes a new instance of the uframe_instance class, encapsulating both certain and uncertain data.
+    
         Parameters
         ----------
-        continuous : scipy.stats._kde.gaussian_kde | scipy.stats
-            Scipy Kernel Density Estimation or other, that describes the ucnertain Variables of the instance.
-        certain_data 1D np.array
-            Certain data instances.
-        categorical_uncertainty: list of dictionaries
-            List of dictionaries with each dictionary representing the probability distribution of a categorical variable.
-
-        indices : list
-            list of lists of indices which indicates the order in which samples and mode values should be returned. It is haped the following: [[indices certain], [indices continuous], [indices categorical]]
+        certain_data : Optional[npt.ArrayLike], default None
+            Certain data instances represented as a 1D numpy array or a list that can be converted to a numpy array.
+            This parameter is intended for data points that are known with certainty and do not have associated uncertainty.
+    
+        continuous : scipy.stats._kde.gaussian_kde | scipy.stats | Other compatible types, default None
+            A statistical model or class that describes the continuous uncertainty associated with the instance.
+            This could be a probability distribution, Kernel Density Estimation, or any other model capable of
+            representing continuous uncertainty. The object should support methods to sample and calculate PDF
+            values for the continuous uncertain variables.
+    
+        categorical : Optional[List[Dict[str, float]]], default None
+            A list of dictionaries, where each dictionary represents the probability distribution of a categorical
+            variable. Each dictionary maps categories (as strings) to their respective probabilities (as floats).
+            This parameter is used to encapsulate the uncertainty associated with categorical variables.
+    
+        indices : Optional[List[List[int]]], default None
+            Specifies the order in which samples and mode values should be returned. It organizes the data into
+            three groups - certain, continuous, and categorical - and is shaped as [[indices for certain data],
+            [indices for continuous data], [indices for categorical data]]. This allows for the correct alignment
+            of sampled or calculated values when working with the instance.
+    
+        Raises
+        ------
+        ValueError
+            If the `continuous` parameter is provided but does not meet the expected type or interface requirements
+            (i.e., does not have the necessary methods for sampling or PDF evaluation).
+    
+        Notes
+        -----
+        - The `certain_data` parameter, if provided as a list, will be converted to a numpy array internally.
+        - If `certain_data` is None, an empty numpy array is initialized to represent no certain data.
+        - The `continuous` and `categorical` parameters allow for the representation of uncertain data. If not provided,
+          it is assumed there is no uncertainty associated with those types of data for this instance.
+        - The `indices` parameter is crucial for correctly aligning and processing the different types of data, especially
+          when performing operations that involve sampling or optimizing across the uncertain and certain data together.
         """
 
         certain_data = np.array([]) if certain_data is None else certain_data
@@ -141,6 +212,39 @@ class uframe_instance():
 
     # mode functions
     def mode(self, **kwargs):
+        """
+        Calculates and returns the mode value(s) of the uncertain instance.
+    
+        This method utilizes an optimizer to find the mode(s) of the distribution represented by the instance. 
+        It is particularly useful for instances that include continuous uncertainty, where the mode represents 
+        the value(s) with the highest probability density.
+    
+        Returns
+        -------
+        np.array
+            The mode value(s) of the instance. The shape and size of the returned array depend on the underlying 
+            uncertainty distribution and the dimensions of the uncertain data. For continuous data, this typically
+            means returning the point(s) in the input space that correspond to the peak(s) of the probability density 
+            function.
+    
+        Raises
+        ------
+        NotImplementedError
+            If the method for finding the mode is not implemented for the type(s) of uncertainty encapsulated by 
+            the instance. This can occur if the `continuous` attribute does not support an efficient way to calculate 
+            or estimate the mode.
+    
+        Notes
+        -----
+        - The mode calculation is particularly relevant for continuous uncertain data, where it signifies the 
+          most likely value within the distribution. For categorical data, the mode would correspond to the 
+          category with the highest probability.
+        - The implementation of this method may vary depending on the specific types of uncertainty (continuous,
+          categorical) involved and the models used to represent them. It may involve numerical optimization 
+          techniques, analytical solutions, or approximations.
+        - The efficiency and accuracy of the mode calculation can be influenced by the complexity of the uncertainty 
+          model and the dimensionality of the data.
+        """
         if not self._mode_calculated():
             self.__mode =  self.__align(self.__mode_continuous(**kwargs), self.__mode_categorical())
         return self.__mode
@@ -150,6 +254,35 @@ class uframe_instance():
     
 
     def var(self, n:int  = 50, seed: Optional[int] = None): 
+        """
+        Calculates the variance of the uncertain data instance.
+    
+        This method computes the variance of the data represented by the `uframe_instance`, taking into account the uncertainty distributions (both continuous and categorical, if applicable) and certain data components. The variance is a measure of the dispersion of the data points in the uncertain instance from their expected value, providing insights into the uncertainty's spread.
+    
+        Returns
+        -------
+        float
+            The variance of the uncertain data instance. For multi-dimensional data, this could be a vector of variances for each dimension, depending on the implementation specifics.
+    
+        Raises
+        ------
+        ValueError
+            If the instance's data does not allow for variance computation due to missing or invalid data types or distributions.
+    
+        Notes
+        -----
+        - The calculation of variance may involve integrating over the probability density functions (PDFs) of the continuous distributions and considering the probabilities and outcomes of categorical variables.
+        - This method assumes that all components of the uncertain data instance are appropriately initialized and that their variances can be meaningfully computed and aggregated.
+    
+        Example
+        -------
+        Assuming `uframe_inst` is an instance of `uframe_instance`:
+    
+        >>> variance = uframe_inst.var()
+        >>> print(variance)
+        # Output: The variance of the uncertain data instance, reflecting the spread of the underlying uncertainty.
+    
+        """
         return np.var(self.sample(n=n, seed = seed), axis = 0)
         
     
@@ -191,6 +324,44 @@ class uframe_instance():
 
     # sampling functions
     def sample(self, n: int = 1, seed: Optional[int] = None, threshold: Optional[float] = 1):
+        
+        """
+        Samples `n` instances from the uncertain data instance.
+    
+        This method generates samples from the uncertain data instance represented by the `uframe_instance` object. It utilizes the underlying uncertainty distributions to produce samples that are consistent with the uncertainty model. The method can handle continuous, categorical, and certain data, generating a comprehensive sample that reflects all aspects of the data instance's uncertainty.
+    
+        Parameters
+        ----------
+        n : int, optional
+            The number of samples to generate from the uncertain data instance. The default value is 1.
+        seed : int, optional
+            The seed for the random number generator to ensure reproducibility of the samples. If not provided, the sampling process will be stochastic, potentially leading to different results on each invocation.
+    
+        Returns
+        -------
+        np.ndarray
+            An array of sampled values. The shape of the array depends on the number of samples (`n`) requested. Each row in the output array corresponds to a single sample drawn from the uncertain data instance.
+    
+        Raises
+        ------
+        ValueError
+            If the continuous uncertainty object is not recognized or supported by the method.
+    
+        Notes
+        -----
+        - The method integrates over the continuous and categorical uncertainties, as well as the certain data, to generate a composite sample that mirrors the structure of the `uframe_instance`.
+        - The sampling process considers the indices and associations specified in the `uframe_instance` object to ensure that the sampled values are aligned with the respective continuous, categorical, and certain data components.
+    
+        Example
+        -------
+        Assuming an instance `uframe_inst` of `uframe_instance` has been properly initialized:
+    
+        >>> samples = uframe_inst.sample(n=10, seed=42)
+        >>> print(samples)
+        # This will print an array of 10 samples drawn from the `uframe_inst` according to its uncertainty model.
+    
+        """
+        
         if threshold == 1:
             return self.__align(self.sample_continuous(n, seed), self.sample_categorical(n, seed), n)
         else: 
