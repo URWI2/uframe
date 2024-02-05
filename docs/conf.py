@@ -40,5 +40,13 @@ html_static_path = ['_static']
 
 import os
 import sys
-import uframe
-sys.path.insert(0, os.path.abspath('/src/uframe')) 
+
+_HERE = os.path.dirname(__file__)
+_ROOT_DIR = os.path.abspath(os.path.join(_HERE, '..'))
+_PACKAGE_DIR = os.path.abspath(os.path.join(_HERE, '../src'))
+_SUBPACKAGE_DIR = os.path.abspath(os.path.join(_HERE, '../src/uframe'))
+
+sys.path.insert(0, _ROOT_DIR)
+sys.path.insert(0, _PACKAGE_DIR)
+sys.path.insert(0, _SUBPACKAGE_DIR)
+
