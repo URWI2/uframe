@@ -30,7 +30,7 @@ jobs:
         run: |
           pip3 install --upgrade pip
           
-          pip install sphinx sphinx_rtd_theme myst_parser autodocsumm
+          pip install sphinx sphinx_rtd_theme myst_parser autodocsumm seaborn
           pip install .
       - name: Sphinx build
         run: |
