@@ -1,7 +1,7 @@
 uframe 
 =========
 
-.. automodule:: uframe.uframe
+.. automodule:: uframe
    :members:
    :undoc-members:
    :show-inheritance:
