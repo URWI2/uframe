@@ -46,7 +46,7 @@ class uframe_instance():
 
     def __init__(self, certain_data: Optional[npt.ArrayLike] = None, continuous=None,
                  categorical: Optional[List[Dict[str, float]]] = None, indices: Optional[List[List[int]]] = None):
-        """ Constructor Method for
+        """ Constructor Method
         """
 
         certain_data = np.array([]) if certain_data is None else certain_data
@@ -140,11 +140,10 @@ class uframe_instance():
     # mode functions
     def mode(self, **kwargs):
         """
-        Calculates and returns the mode value(s) of the uncertain instance.
+        Calculates and returns the mode value of the uncertain instance.
     
-        This method utilizes an optimizer to find the mode(s) of the distribution represented by the instance. 
-        It is particularly useful for instances that include continuous uncertainty, where the mode represents 
-        the value(s) with the highest probability density.
+        For non-parametric distributions, this method utilizes an optimizer to find the mode of the instance. 
+        The mode represents the value with the highest probability density.
     
         Returns
         -------
@@ -182,14 +181,19 @@ class uframe_instance():
 
     def var(self, n:int  = 50, seed: Optional[int] = None): 
         """
-        Calculates the variance of the uncertain data instance.
+        Calculates the variance of the uncertain data instance by sampling.
     
-        This method computes the variance of the data represented by the `uframe_instance`, taking into account the uncertainty distributions (both continuous and categorical, if applicable) and certain data components. The variance is a measure of the dispersion of the data points in the uncertain instance from their expected value, providing insights into the uncertainty's spread.
     
+        Parameters
+        ----------
+        n : int, optional
+            The number of samples to generate from the uncertain data instance. The default value is 50.
+        
+        
         Returns
         -------
         float
-            The variance of the uncertain data instance. For multi-dimensional data, this could be a vector of variances for each dimension, depending on the implementation specifics.
+            The variance of the uncertain data instance. For multi-dimensional data, this will be a vector of variances for each dimension, depending on the implementation specifics.
     
         Raises
         ------
@@ -198,7 +202,6 @@ class uframe_instance():
     
         Notes
         -----
-        - The calculation of variance may involve integrating over the probability density functions (PDFs) of the continuous distributions and considering the probabilities and outcomes of categorical variables.
         - This method assumes that all components of the uncertain data instance are appropriately initialized and that their variances can be meaningfully computed and aggregated.
     
         Example
@@ -207,7 +210,7 @@ class uframe_instance():
     
         >>> variance = uframe_inst.var()
         >>> print(variance)
-        # Output: The variance of the uncertain data instance, reflecting the spread of the underlying uncertainty.
+        # Output: The variance of the uncertain data instance.
     
         """
         return np.var(self.sample(n=n, seed = seed), axis = 0)
@@ -263,7 +266,8 @@ class uframe_instance():
             The number of samples to generate from the uncertain data instance. The default value is 1.
         seed : int, optional
             The seed for the random number generator to ensure reproducibility of the samples. If not provided, the sampling process will be stochastic, potentially leading to different results on each invocation.
-    
+        threshold: float, optional 
+            If below 1, only the samples with the highest probability density are selected. Parameter defines percent of samples chosen. 
         Returns
         -------
         np.ndarray
