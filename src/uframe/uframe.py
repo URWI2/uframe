@@ -32,9 +32,9 @@ from typing import Optional, List, Dict
 
 class uframe():
     """
-    A class for managing uncertain data within a structured framework.
+    Class for managing uncertain data within a structured framework.
 
-    This class provides a comprehensive interface for handling data with uncertainties, allowing for operations such as sampling, computing modal and expected values, and one-hot encoding categorical data. It is built around a collection of `uframe_instance` objects, each representing an individual data point with uncertainty.
+    This class provides a comprehensive interface for handling data with uncertainties, allowing for operations such as sampling, computing modal and expected values, and one-hot encoding categorical data. It is built around a collection of `uframe_instance` objects, each representing an individual uncertain data instance.
 
     Parameters
     ----------
@@ -44,31 +44,13 @@ class uframe():
         List of column names corresponding to the attributes of the data instances.
     rows : list
         List of row names, typically representing individual data points or observations.
-    _colnames : dict
-        A dictionary mapping column names to their respective indices within the data.
-    _rownames : dict
-        A dictionary mapping row names to their respective indices within the data.
-    col_dtype : list
-        List indicating the data types of each column, which could include continuous, categorical, and certain data types.
-    _col_dtype : dict
-        A dictionary mapping column names to their specific data types.
-
-    Methods
+    
+    
+    Returns
     -------
-    modal()
-        Computes and returns a numpy array of the data, replacing uncertain values with their modal (most likely) values.
+    out: uframe
+        An uframe array object satisfying the specified requirements.
 
-    sample(n=1, seed=None)
-        Generates 'n' samples for each uncertain data instance and compiles them into a single numpy array, with samples from each instance arranged sequentially.
-
-    ev()
-        Calculates and returns a numpy array where uncertain values are replaced by their expected values (means), providing a deterministic representation of the data.
-
-    get_dummies()
-        Applies one-hot encoding to all categorical columns within the data, facilitating the use of the data for machine learning and statistical analysis.
-
-    append(new=None)
-        Appends new rows to the data, which can be either certain or uncertain. The new rows initially have to be numpy arrays, with support for other formats planned for future development.
 
     Notes
     -----
@@ -144,7 +126,7 @@ class uframe():
    
     def analysis(self, true_data, save = False, **kwargs): 
         """
-        Perform analysis comparing uncertain data predictions with true data.
+        Perform analysis comparing uncertain data instances with its true counterpart.
         
         This method generates histograms and statistical tables for continuous variables, comparing the distributions of predicted values (using mode and expected value methods) with true data values. It allows for a detailed examination of how well the uncertain data handling techniques perform and identifies potential biases or discrepancies.
         
@@ -160,7 +142,7 @@ class uframe():
         Returns
         -------
         None
-            This method does not return any value. Its primary output is the visual and statistical analysis conducted on the mode and expected value predictions compared to the true data.
+            This method does not return any value. Its primary output is saved as a pdf file.
         
         Notes
         -----

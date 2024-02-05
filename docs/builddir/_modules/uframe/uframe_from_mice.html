@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>uframe.uframe_from_mice &mdash; uframe 0.0.25 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=92fd9be5" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5d650c58"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            uframe
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">uframe</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">uframe.uframe_from_mice</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for uframe.uframe_from_mice</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span> 
+<span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="kn">import</span>  <span class="n">MinMaxScaler</span>
+<span class="kn">import</span> <span class="nn">miceforest</span> <span class="k">as</span> <span class="nn">mf</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">stats</span>
+<span class="kn">from</span> <span class="nn">sklearn.neighbors</span> <span class="kn">import</span> <span class="n">KernelDensity</span>
+<span class="kn">from</span> <span class="nn">uframe</span> <span class="kn">import</span> <span class="n">uframe</span>
+<span class="kn">import</span> <span class="nn">random</span>
+
+<span class="k">def</span> <span class="nf">generate_missing_values</span><span class="p">(</span><span class="n">complete_data</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="n">method</span> <span class="o">=</span> <span class="s1">&#39;binomial&#39;</span><span class="p">):</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">complete_data</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">data_out</span> <span class="o">=</span> <span class="n">complete_data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">p</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> 
+        <span class="n">missing</span> <span class="o">=</span> <span class="kc">None</span>
+        
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;binomial&#39;</span><span class="p">:</span> 
+        <span class="n">missing</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">shape</span><span class="p">)</span>
+      
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;fix&#39;</span><span class="p">:</span> 
+        
+        <span class="n">n_choose</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">p</span><span class="o">*</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">missing</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">missing</span><span class="p">[</span><span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span><span class="n">n_choose</span><span class="p">),</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            
+    <span class="k">else</span><span class="p">:</span> 
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unknown method&quot;</span><span class="p">)</span>
+    <span class="n">data_out</span> <span class="o">=</span> <span class="n">data_out</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">data_out</span><span class="p">[</span><span class="n">missing</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;bool&#39;</span><span class="p">)]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        
+    <span class="k">return</span> <span class="n">data_out</span><span class="p">,</span> <span class="n">missing</span>
+    
+
+
+<span class="k">def</span> <span class="nf">add_bias</span><span class="p">(</span><span class="n">old_values</span><span class="p">,</span> <span class="n">bias</span><span class="p">,</span> <span class="n">bias_method</span><span class="p">):</span> 
+    
+    <span class="n">new_values</span> <span class="o">=</span> <span class="n">old_values</span> 
+    
+    
+    <span class="k">if</span> <span class="n">bias_method</span> <span class="o">==</span> <span class="s2">&quot;fix&quot;</span><span class="p">:</span> 
+        
+        <span class="n">new_values</span> <span class="o">=</span> <span class="n">new_values</span> <span class="o">+</span> <span class="n">bias</span>
+        
+    <span class="k">elif</span> <span class="n">bias_method</span> <span class="o">==</span> <span class="s2">&quot;gaussian&quot;</span><span class="p">:</span>
+        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">new_values</span><span class="p">)):</span> 
+            <span class="n">new_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">random</span><span class="o">.</span><span class="n">normalvariate</span><span class="p">(</span><span class="n">bias</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            
+    <span class="k">elif</span> <span class="n">bias_method</span> <span class="o">==</span> <span class="s2">&quot;even&quot;</span><span class="p">:</span> 
+        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">new_values</span><span class="p">)):</span> 
+            <span class="n">new_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="nb">abs</span><span class="p">(</span><span class="n">bias</span><span class="p">),</span> <span class="nb">abs</span><span class="p">(</span><span class="n">bias</span><span class="p">))</span>
+        
+    
+    <span class="k">return</span> <span class="n">new_values</span>
+    
+    
+<div class="viewcode-block" id="uframe_from_array_sim">
+<a class="viewcode-back" href="../../uframe.html#uframe.uframe_from_array_sim">[docs]</a>
+<span class="k">def</span> <span class="nf">uframe_from_array_sim</span><span class="p">(</span><span class="n">X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> 
+                          <span class="n">missing_method</span> <span class="o">=</span> <span class="s1">&#39;binomial&#39;</span><span class="p">,</span>
+                          <span class="n">bias</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+                          <span class="n">bias_method</span> <span class="o">=</span> <span class="s1">&#39;even&#39;</span><span class="p">,</span>
+                          <span class="n">dist_method</span> <span class="o">=</span> <span class="s1">&#39;gaussian&#39;</span><span class="p">,</span>
+                          <span class="n">std</span>  <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+                          <span class="n">std_method</span> <span class="o">=</span> <span class="s1">&#39;fix&#39;</span><span class="p">,</span>
+                          <span class="n">seed</span>  <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>  
+<span class="w">    </span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a uframe object from a numpy array by simulating uncertain data.</span>
+
+<span class="sd">    This function simulates uncertainty within the given numpy array `X` by introducing variability based on a specified proportion `p`. The resulting data, characterized by simulated uncertainty, is then encapsulated into a `uframe` object for further analysis and processing.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    X : np.ndarray</span>
+<span class="sd">        The input data array to simulate uncertainty within. Should be a 2D numpy array where rows represent individual observations and columns represent features.</span>
+<span class="sd">    p : float, default=0.5</span>
+<span class="sd">        The proportion of uncertainty to simulate in the data. This could define the variance of the noise introduced or the proportion of values to replace with simulated uncertainty, depending on the implementation.</span>
+<span class="sd">    **kwargs : dict</span>
+<span class="sd">        Additional keyword arguments that may control aspects of the uncertainty simulation, such as the distribution of simulated noise, seed for reproducibility, among others.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    uframe</span>
+<span class="sd">        A `uframe` object containing the data with simulated uncertainty. This object is ready for analysis, allowing for the exploration of uncertainty&#39;s impact on data interpretation and decision-making processes.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">    &gt;&gt;&gt; X = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])</span>
+<span class="sd">    &gt;&gt;&gt; uf_sim = uframe_from_array_sim(X, p=0.3)</span>
+<span class="sd">    </span>
+<span class="sd">    # Example: Using the resulting uframe for analysis</span>
+<span class="sd">    &gt;&gt;&gt; print(uf_sim.sample(100))  # Generate 100 samples for each data instance to analyze the simulated uncertainty</span>
+<span class="sd">    &gt;&gt;&gt; print(uf_sim.ev())         # Calculate expected values to understand the central tendency of the simulated uncertain data</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    - The specific mechanism of uncertainty simulation (e.g., noise addition, value replacement) should be detailed in the implementation to guide users on the nature of simulated uncertainty within the data.</span>
+<span class="sd">    - The `p` parameter&#39;s interpretation and the effect of additional keyword arguments (`**kwargs`) might vary based on the implementation specifics, highlighting the flexibility of this function in simulating various uncertainty scenarios.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">X_missing</span><span class="p">,</span> <span class="n">missing</span> <span class="o">=</span> <span class="n">generate_missing_values</span><span class="p">(</span><span class="n">complete_data</span> <span class="o">=</span> <span class="n">X</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">p</span><span class="p">,</span> <span class="n">seed</span> <span class="o">=</span> <span class="n">seed</span> <span class="p">,</span> <span class="n">method</span> <span class="o">=</span> <span class="n">missing_method</span><span class="p">)</span>
+    
+    
+    <span class="k">if</span> <span class="n">std_method</span> <span class="o">==</span> <span class="s2">&quot;relative&quot;</span><span class="p">:</span>
+        <span class="n">stds</span> <span class="o">=</span> <span class="n">std</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">stds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">std</span><span class="p">,</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+
+    <span class="n">distr</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">X_missing</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]))</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="k">continue</span>
+        
+
+        
+        <span class="n">mean</span> <span class="o">=</span> <span class="n">add_bias</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:][</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">X_missing</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]))[</span><span class="mi">0</span><span class="p">]],</span> 
+                        <span class="n">bias</span> <span class="o">=</span> <span class="n">bias</span><span class="p">,</span> 
+                        <span class="n">bias_method</span> <span class="o">=</span> <span class="n">bias_method</span><span class="p">)</span>
+        
+        
+        <span class="k">if</span> <span class="n">dist_method</span> <span class="o">==</span> <span class="s2">&quot;gaussian&quot;</span><span class="p">:</span> 
+            <span class="n">cov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">stds</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">X_missing</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]))])</span>
+
+            <span class="n">distr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span> <span class="n">cov</span><span class="o">=</span><span class="n">cov</span><span class="p">)</span>
+
+
+    
+    <span class="n">u</span> <span class="o">=</span> <span class="n">uframe</span><span class="p">()</span>
+    <span class="n">u</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new</span><span class="o">=</span><span class="p">[</span><span class="n">X_missing</span><span class="p">,</span> <span class="n">distr</span><span class="p">])</span>
+    
+    <span class="k">return</span> <span class="n">u</span> </div>
+
+    
+    
+
+<div class="viewcode-block" id="uframe_from_array_mice">
+<a class="viewcode-back" href="../../uframe.html#uframe.uframe_from_array_mice">[docs]</a>
+<span class="k">def</span> <span class="nf">uframe_from_array_mice</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> 
+                             <span class="n">mice_iterations</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> 
+                             <span class="n">kernel</span><span class="o">=</span><span class="s2">&quot;gaussian&quot;</span><span class="p">,</span>
+                             <span class="n">method</span><span class="o">=</span> <span class="s1">&#39;binomial&#39;</span><span class="p">,</span>
+                             <span class="n">cat_indices</span><span class="o">=</span><span class="p">[],</span> 
+                             <span class="n">seed</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
+                             <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a uframe object from a numpy array with missing data imputed using the MICE algorithm.</span>
+
+<span class="sd">    This function applies MICE (Multiple Imputation by Chained Equations) to impute missing values in the given array, then encapsulates the imputed data along with imputation distributions for each missing value into a `uframe` object.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    a : np.ndarray</span>
+<span class="sd">        The input data array with missing values to be imputed. Should be a 2D numpy array.</span>
+<span class="sd">    p : float, default=0.1</span>
+<span class="sd">        The proportion of missingness if the input array `a` does not already contain missing values.</span>
+<span class="sd">    mice_iterations : int, default=5</span>
+<span class="sd">        The number of iterations the MICE algorithm will run to impute missing values.</span>
+<span class="sd">    kernel : str, default=&quot;gaussian&quot;</span>
+<span class="sd">        The kernel to use for density estimation of continuous variables. Supported values include &quot;gaussian&quot; for Gaussian kernels.</span>
+<span class="sd">    method : str, default=&#39;binomial&#39;</span>
+<span class="sd">        The method to generate missing values artificially if `a` does not contain missing values. Default is &#39;binomial&#39;.</span>
+<span class="sd">    cat_indices : list, default=[]</span>
+<span class="sd">        List of column indices in `a` that are categorical. These columns will be treated differently during the imputation process.</span>
+<span class="sd">    seed : int, optional</span>
+<span class="sd">        Seed for the random number generator to ensure reproducibility.</span>
+<span class="sd">    **kwargs : dict</span>
+<span class="sd">        Additional keyword arguments for the MICE imputation function.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    uframe</span>
+<span class="sd">        A `uframe` object containing the imputed data along with imputation distributions for each missing entry, ready for further analysis.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">    &gt;&gt;&gt; a = np.array([[1, np.nan, 3], [4, 5, np.nan], [7, 8, 9]])</span>
+<span class="sd">    &gt;&gt;&gt; uf = uframe_from_array_mice(a, mice_iterations=10, cat_indices=[2], seed=42)</span>
+<span class="sd">    </span>
+<span class="sd">    # Example: Using the resulting uframe for analysis</span>
+<span class="sd">    &gt;&gt;&gt; print(uf.sample(100))  # Generate 100 samples for statistical analysis</span>
+<span class="sd">    &gt;&gt;&gt; print(uf.ev())         # Calculate expected values for the uframe</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    - MICE is particularly useful for datasets where the assumption of data being missing at random (MAR) is reasonable.</span>
+<span class="sd">    - The choice of `kernel` and the number of `mice_iterations` can significantly impact the quality of imputation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">missing</span> <span class="o">=</span> <span class="n">generate_missing_values</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="n">method</span> <span class="o">=</span> <span class="n">method</span><span class="p">)</span>
+    
+    <span class="n">distr</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">cat_distr</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">index_dict</span><span class="o">=</span><span class="p">{}</span>
+
+    <span class="c1"># train mice imputation correctly</span>
+    <span class="n">kds</span> <span class="o">=</span> <span class="n">mf</span><span class="o">.</span><span class="n">ImputationKernel</span><span class="p">(</span>
+        <span class="n">x</span><span class="p">,</span>
+        <span class="n">save_all_iterations</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">random_state</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+
+    <span class="n">kds</span><span class="o">.</span><span class="n">mice</span><span class="p">(</span><span class="n">mice_iterations</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="n">imp_distr</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">imp_arrays</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">cat_distributions</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">])</span> <span class="ow">and</span> <span class="n">j</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cat_indices</span><span class="p">:</span>
+
+                <span class="n">imp_values</span> <span class="o">=</span> <span class="p">[]</span>
+
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">mice_iterations</span><span class="p">):</span>
+                    <span class="n">imput_x</span> <span class="o">=</span> <span class="n">kds</span><span class="o">.</span><span class="n">complete_data</span><span class="p">(</span><span class="n">iteration</span><span class="o">=</span><span class="n">k</span><span class="p">)</span>
+                    <span class="n">imp_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">imput_x</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">])</span>
+
+                <span class="n">imp_value_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">imp_values</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">mice_iterations</span><span class="p">))</span>
+                <span class="n">imp_arrays</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">imp_value_arr</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">index_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">index_dict</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">index_dict</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="p">[[</span><span class="n">j</span><span class="p">],</span> <span class="p">[]]</span>
+                
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">])</span> <span class="ow">and</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">cat_indices</span><span class="p">:</span>
+                
+                <span class="n">imp_values</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">mice_iterations</span><span class="p">):</span>
+                    <span class="n">imput_x</span> <span class="o">=</span> <span class="n">kds</span><span class="o">.</span><span class="n">complete_data</span><span class="p">(</span><span class="n">iteration</span><span class="o">=</span><span class="n">k</span><span class="p">)</span>
+                    <span class="n">imp_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">imput_x</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">])</span>
+                
+                <span class="n">d</span><span class="o">=</span><span class="p">{}</span>
+                <span class="k">for</span> <span class="n">imp_value</span> <span class="ow">in</span> <span class="n">imp_values</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">imp_value</span><span class="p">)</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="n">d</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">imp_value</span><span class="p">)]</span><span class="o">+=</span> <span class="mi">1</span><span class="o">/</span><span class="n">mice_iterations</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">d</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">imp_value</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="n">mice_iterations</span> 
+                        
+                <span class="n">cat_distributions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">index_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">index_dict</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">index_dict</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="p">[[],[</span><span class="n">j</span><span class="p">]]</span>
+                
+            <span class="n">cat_distr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">=</span> <span class="n">cat_distributions</span>
+            
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">imp_arrays</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+        
+        <span class="n">imp_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">imp_arrays</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">kernel</span> <span class="o">==</span> <span class="s2">&quot;stats.gaussian_kde&quot;</span><span class="p">:</span>
+            <span class="n">kde</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">gaussian_kde</span><span class="p">(</span><span class="n">imp_array</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">imp_array</span> <span class="o">=</span> <span class="n">imp_array</span><span class="o">.</span><span class="n">T</span>
+            <span class="n">kde</span> <span class="o">=</span> <span class="n">KernelDensity</span><span class="p">(</span><span class="n">kernel</span><span class="o">=</span><span class="n">kernel</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">imp_array</span><span class="p">)</span>
+
+        <span class="n">imp_distr</span> <span class="o">=</span> <span class="n">kde</span>
+
+        <span class="n">distr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">imp_distr</span>
+
+    <span class="n">cont_indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cat_indices</span><span class="p">]</span>
+    <span class="n">x_cont</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span><span class="n">cont_indices</span><span class="p">]</span>
+    <span class="n">x</span><span class="p">[:,</span><span class="n">cont_indices</span><span class="p">]</span><span class="o">=</span><span class="n">x_cont</span>
+
+    <span class="n">u</span> <span class="o">=</span> <span class="n">uframe</span><span class="p">()</span>
+    <span class="n">u</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new</span><span class="o">=</span><span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">distr</span><span class="p">,</span> <span class="n">cat_distr</span><span class="p">,</span> <span class="n">index_dict</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">u</span></div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Christian Amesoeder, Michael Hagn.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

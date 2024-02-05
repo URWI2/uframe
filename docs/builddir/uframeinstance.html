@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>uframe_instance &mdash; uframe 0.0.25 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=92fd9be5" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=5d650c58"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="uframe_from_array_mice()" href="generation.html" />
+    <link rel="prev" title="uframe" href="uframe.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            uframe
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="uframe.html">uframe</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">uframe_instance</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#uframe.uframe_instance.uframe_instance"><code class="docutils literal notranslate"><span class="pre">uframe_instance</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#uframe.uframe_instance.uframe_instance.ev"><code class="docutils literal notranslate"><span class="pre">uframe_instance.ev()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#uframe.uframe_instance.uframe_instance.mode"><code class="docutils literal notranslate"><span class="pre">uframe_instance.mode()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#uframe.uframe_instance.uframe_instance.pdf"><code class="docutils literal notranslate"><span class="pre">uframe_instance.pdf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#uframe.uframe_instance.uframe_instance.sample"><code class="docutils literal notranslate"><span class="pre">uframe_instance.sample()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#uframe.uframe_instance.uframe_instance.var"><code class="docutils literal notranslate"><span class="pre">uframe_instance.var()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generation.html">uframe_from_array_mice()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="generation.html#uframe-from-array-sim">uframe_from_array_sim()</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">uframe</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">uframe_instance</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/uframeinstance.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="uframe-instance">
+<h1>uframe_instance<a class="headerlink" href="#uframe-instance" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="uframe.uframe_instance.uframe_instance">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">uframe.uframe_instance.</span></span><span class="sig-name descname"><span class="pre">uframe_instance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">certain_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">continuous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">categorical</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/uframe/uframe_instance.html#uframe_instance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#uframe.uframe_instance.uframe_instance" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<hr class="docutils" />
+<p>The <cite>uframe_instance</cite> class is designed to represent a single uncertain data instance within the <cite>uframe</cite> package.
+It encapsulates continuous, categorical, and certain data along with their associations, providing a structured way
+to handle uncertain data. This class is a fundamental part of the <cite>uframe</cite> package, offering a structured approach to handling and analyzing
+a single uncertain data instance. It abstracts the complexity of managing uncertainty
+and its computation, providing a unified interface for sampling and optimization tasks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>certain_data</strong> (<em>Optional</em><em>[</em><em>npt.ArrayLike</em><em>]</em>) – Certain data instances represented as a 1D numpy array.</p></li>
+<li><p><strong>continuous</strong> (<em>scipy.stats._kde.gaussian_kde</em><em> | </em><em>scipy.stats and other compatible types</em>) – Describes the uncertain variables of the instance using Scipy Kernel Density Estimation or similar models.</p></li>
+<li><p><strong>categorical</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>float</em><em>]</em><em>]</em><em>]</em>) – A list of dictionaries, each representing the probability distribution of a categorical variable.</p></li>
+<li><p><strong>indices</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>List</em><em>[</em><em>int</em><em>]</em><em>]</em><em>]</em>) – Specifies the order in which samples and mode values should be returned. It is shaped as
+[[indices certain], [indices continuous], [indices categorical]].</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>out</strong> – An uframe instance object satisfying the specified requirements.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#uframe.uframe_instance.uframe_instance" title="uframe.uframe_instance.uframe_instance">uframe_instance</a></p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="uframe.uframe_instance.uframe_instance.ev">
+<span class="sig-name descname"><span class="pre">ev</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/uframe/uframe_instance.html#uframe_instance.ev"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#uframe.uframe_instance.uframe_instance.ev" title="Link to this definition"></a></dt>
+<dd><p>Calculate the expected value of the uncertain instance.</p>
+<p>This method generates samples from the uncertain instance and computes their mean. If the instance has categorical data, the expected value for categorical variables is set to None, and categorical distributions are appended separately.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em><em>, </em><em>default=50</em>) – The number of samples to generate for calculating the expected value. A higher number of samples may lead to a more accurate estimation but will require more computation.</p></li>
+<li><p><strong>seed</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em><em>, </em><em>default=None</em>) – Seed for the random number generator to ensure reproducibility. If None, the randomness is unpredictable.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The expected value of the uncertain instance. For purely numeric data, this is a numpy array of the mean values. For instances with categorical data, the return value is a list containing the numpy array of mean values for continuous and certain data (with categorical means set to None) and the list of categorical distributions.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.array | List[Union[np.array, List[Dict[str, float]]]]</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The expected value for categorical data is not directly computed since categorical data represents discrete categories without a direct notion of ‘average’. The method returns the categorical distributions themselves for further analysis.</p></li>
+<li><p>This method caches its result. Subsequent calls with the same parameters will return the cached value without recomputation.</p></li>
+</ul>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">u_instance</span> <span class="o">=</span> <span class="n">uframe_instance</span><span class="p">(</span><span class="n">certain_data</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]),</span>
+<span class="go">                                 continuous=scipy.stats.norm(loc=0, scale=1),</span>
+<span class="go">                                 categorical=[{&quot;cat1&quot;: 0.5, &quot;cat2&quot;: 0.5}])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u_instance</span><span class="o">.</span><span class="n">ev</span><span class="p">()</span>
+<span class="go">[array([1., 2., 3., mean of samples]), [{&#39;cat1&#39;: 0.5, &#39;cat2&#39;: 0.5}]]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="uframe.uframe_instance.uframe_instance.mode">
+<span class="sig-name descname"><span class="pre">mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/uframe/uframe_instance.html#uframe_instance.mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#uframe.uframe_instance.uframe_instance.mode" title="Link to this definition"></a></dt>
+<dd><p>Calculates and returns the mode value(s) of the uncertain instance.</p>
+<p>This method utilizes an optimizer to find the mode(s) of the distribution represented by the instance.
+It is particularly useful for instances that include continuous uncertainty, where the mode represents
+the value(s) with the highest probability density.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The mode value(s) of the instance. The shape and size of the returned array depend on the underlying
+uncertainty distribution and the dimensions of the uncertain data. For continuous data, this typically
+means returning the point(s) in the input space that correspond to the peak(s) of the probability density
+function.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.array</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>NotImplementedError</strong> – If the method for finding the mode is not implemented for the type(s) of uncertainty encapsulated by
+    the instance. This can occur if the <cite>continuous</cite> attribute does not support an efficient way to calculate
+    or estimate the mode.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The mode calculation is particularly relevant for continuous uncertain data, where it signifies the
+most likely value within the distribution. For categorical data, the mode would correspond to the
+category with the highest probability.</p></li>
+<li><p>The implementation of this method may vary depending on the specific types of uncertainty (continuous,
+categorical) involved and the models used to represent them. It may involve numerical optimization
+techniques, analytical solutions, or approximations.</p></li>
+<li><p>The efficiency and accuracy of the mode calculation can be influenced by the complexity of the uncertainty
+model and the dimensionality of the data.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="uframe.uframe_instance.uframe_instance.pdf">
+<span class="sig-name descname"><span class="pre">pdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/uframe/uframe_instance.html#uframe_instance.pdf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#uframe.uframe_instance.uframe_instance.pdf" title="Link to this definition"></a></dt>
+<dd><p>Compute the probability density function (PDF) for the given input(s).</p>
+<p>This method calculates the PDF values for each input in ‘k’ considering all uncertainties (continuous, categorical) within the instance. It leverages the ‘pdf_elementwise’ method to compute the PDF for each element.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>k</strong> (<em>np.array</em><em> | </em><em>List</em>) – The input value(s) for which the PDF should be computed. Can be a list or a numpy array. The input should match the structure and dimensions of the uncertain data instance, i.e., it should have the same number of elements as there are uncertain and certain variables in the instance.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An array of PDF values corresponding to each input in ‘k’. The output is reshaped to ensure compatibility with further processing, typically having one PDF value per input scenario.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The method automatically handles inputs in list format by converting them to numpy arrays.</p></li>
+<li><p>It reshapes the input ‘k’ to ensure it matches the expected dimensionality of the uncertain instance, facilitating element-wise PDF computation.</p></li>
+<li><p>The ‘pdf_elementwise’ method is called internally to compute the PDF for individual elements based on their uncertainty type (continuous or categorical).</p></li>
+</ul>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">u_instance</span> <span class="o">=</span> <span class="n">uframe_instance</span><span class="p">(</span><span class="n">certain_data</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]),</span>
+<span class="go">                                 continuous=scipy.stats.norm(loc=0, scale=1))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u_instance</span><span class="o">.</span><span class="n">pdf</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="go">array([[PDF value]])</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">u_instance</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]]))</span>
+<span class="go">array([[PDF value for [0, 1, 2]],</span>
+<span class="go">       [PDF value for [3, 4, 5]]])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="uframe.uframe_instance.uframe_instance.sample">
+<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/uframe/uframe_instance.html#uframe_instance.sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#uframe.uframe_instance.uframe_instance.sample" title="Link to this definition"></a></dt>
+<dd><p>Samples <cite>n</cite> instances from the uncertain data instance.</p>
+<p>This method generates samples from the uncertain data instance represented by the <cite>uframe_instance</cite> object. It utilizes the underlying uncertainty distributions to produce samples that are consistent with the uncertainty model. The method can handle continuous, categorical, and certain data, generating a comprehensive sample that reflects all aspects of the data instance’s uncertainty.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of samples to generate from the uncertain data instance. The default value is 1.</p></li>
+<li><p><strong>seed</strong> (<em>int</em><em>, </em><em>optional</em>) – The seed for the random number generator to ensure reproducibility of the samples. If not provided, the sampling process will be stochastic, potentially leading to different results on each invocation.</p></li>
+<li><p><strong>threshold</strong> (<em>float</em><em> | </em><em>None</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An array of sampled values. The shape of the array depends on the number of samples (<cite>n</cite>) requested. Each row in the output array corresponds to a single sample drawn from the uncertain data instance.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the continuous uncertainty object is not recognized or supported by the method.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The method integrates over the continuous and categorical uncertainties, as well as the certain data, to generate a composite sample that mirrors the structure of the <cite>uframe_instance</cite>.</p></li>
+<li><p>The sampling process considers the indices and associations specified in the <cite>uframe_instance</cite> object to ensure that the sampled values are aligned with the respective continuous, categorical, and certain data components.</p></li>
+</ul>
+<p class="rubric">Example</p>
+<p>Assuming an instance <cite>uframe_inst</cite> of <cite>uframe_instance</cite> has been properly initialized:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">samples</span> <span class="o">=</span> <span class="n">uframe_inst</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+<span class="go"># This will print an array of 10 samples drawn from the `uframe_inst` according to its uncertainty model.</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="uframe.uframe_instance.uframe_instance.var">
+<span class="sig-name descname"><span class="pre">var</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/uframe/uframe_instance.html#uframe_instance.var"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#uframe.uframe_instance.uframe_instance.var" title="Link to this definition"></a></dt>
+<dd><p>Calculates the variance of the uncertain data instance.</p>
+<p>This method computes the variance of the data represented by the <cite>uframe_instance</cite>, taking into account the uncertainty distributions (both continuous and categorical, if applicable) and certain data components. The variance is a measure of the dispersion of the data points in the uncertain instance from their expected value, providing insights into the uncertainty’s spread.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The variance of the uncertain data instance. For multi-dimensional data, this could be a vector of variances for each dimension, depending on the implementation specifics.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If the instance’s data does not allow for variance computation due to missing or invalid data types or distributions.</p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>n</strong> (<em>int</em>) – </p></li>
+<li><p><strong>seed</strong> (<em>int</em><em> | </em><em>None</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The calculation of variance may involve integrating over the probability density functions (PDFs) of the continuous distributions and considering the probabilities and outcomes of categorical variables.</p></li>
+<li><p>This method assumes that all components of the uncertain data instance are appropriately initialized and that their variances can be meaningfully computed and aggregated.</p></li>
+</ul>
+<p class="rubric">Example</p>
+<p>Assuming <cite>uframe_inst</cite> is an instance of <cite>uframe_instance</cite>:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">variance</span> <span class="o">=</span> <span class="n">uframe_inst</span><span class="o">.</span><span class="n">var</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">variance</span><span class="p">)</span>
+<span class="go"># Output: The variance of the uncertain data instance, reflecting the spread of the underlying uncertainty.</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="uframe.html" class="btn btn-neutral float-left" title="uframe" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="generation.html" class="btn btn-neutral float-right" title="uframe_from_array_mice()" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Christian Amesoeder, Michael Hagn.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

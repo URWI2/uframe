@@ -17,26 +17,12 @@ class uframe_instance():
     
     The `uframe_instance` class is designed to represent a single uncertain data instance within the `uframe` package. 
     It encapsulates continuous, categorical, and certain data along with their associations, providing a structured way 
-    to handle uncertain data.
+    to handle uncertain data. This class is a fundamental part of the `uframe` package, offering a structured approach to handling and analyzing 
+    a single uncertain data instance. It abstracts the complexity of managing uncertainty 
+    and its computation, providing a unified interface for sampling and optimization tasks.
     
-    Attributes
-    ----------
-    continuous : Various types (e.g., scipy.stats._kde.gaussian_kde, scipy.stats)
-        A class or model that describes the underlying continuous uncertainty. This could be a probability 
-        distribution or any statistical model capable of representing continuous uncertainty.
-    certain_data : np.array
-        A numpy array containing certain (i.e., not uncertain) values associated with the data instance.
-    indices : [list, list]
-        A list of lists indicating the associations of indices to continuous, categorical, and certain data.
     
-    Methods
-    -------
-    sample(n=1, seed=None)
-        Samples `n` instances from the uncertain data, allowing for reproducibility through the `seed` parameter.
-    mode()
-        Finds the mode value of the uncertain instance using an optimizer.
-    
-    Constructor Parameters
+    Parameters
     ----------------------
     certain_data : Optional[npt.ArrayLike]
         Certain data instances represented as a 1D numpy array.
@@ -47,79 +33,20 @@ class uframe_instance():
     indices : Optional[List[List[int]]]
         Specifies the order in which samples and mode values should be returned. It is shaped as 
         [[indices certain], [indices continuous], [indices categorical]].
-    
-    Detailed Methods
-    ----------------
-    sample(n=1, seed=None)
-        Purpose:
-            To generate `n` samples from the uncertain data instance.
-        Parameters:
-            n : int, optional
-                The number of samples to generate. Default is 1.
-            seed : int, optional
-                An optional seed for the random number generator to ensure reproducibility.
-        Returns:
-            np.array: An array of sampled values.
-    
-    mode()
-        Purpose:
-            To find the mode of the uncertain instance using optimization techniques.
-        Returns:
-            The mode value(s) of the instance.
-    
-    Additional Features:
-        The class includes methods for dealing with the probability density function (PDF) of the uncertain data,
-        specifically `pdf_elementwise`, `pdf_categorical`, and `pdf_continuous`. These methods provide the 
-        functionality to evaluate the PDFs for the different types of data encapsulated within an instance.
-    
-    This class is a fundamental part of the `uframe` package, offering a structured approach to handling and analyzing 
-    uncertain data across various applications. It abstracts the complexity of managing different uncertainty types 
-    and their computations, providing a unified interface for sampling and optimization tasks.
+
+
+    Returns
+    -------
+    out: uframe_instance
+        An uframe instance object satisfying the specified requirements.
+
+
     """
 
 
     def __init__(self, certain_data: Optional[npt.ArrayLike] = None, continuous=None,
                  categorical: Optional[List[Dict[str, float]]] = None, indices: Optional[List[List[int]]] = None):
-        """
-        Initializes a new instance of the uframe_instance class, encapsulating both certain and uncertain data.
-    
-        Parameters
-        ----------
-        certain_data : Optional[npt.ArrayLike], default None
-            Certain data instances represented as a 1D numpy array or a list that can be converted to a numpy array.
-            This parameter is intended for data points that are known with certainty and do not have associated uncertainty.
-    
-        continuous : scipy.stats._kde.gaussian_kde | scipy.stats | Other compatible types, default None
-            A statistical model or class that describes the continuous uncertainty associated with the instance.
-            This could be a probability distribution, Kernel Density Estimation, or any other model capable of
-            representing continuous uncertainty. The object should support methods to sample and calculate PDF
-            values for the continuous uncertain variables.
-    
-        categorical : Optional[List[Dict[str, float]]], default None
-            A list of dictionaries, where each dictionary represents the probability distribution of a categorical
-            variable. Each dictionary maps categories (as strings) to their respective probabilities (as floats).
-            This parameter is used to encapsulate the uncertainty associated with categorical variables.
-    
-        indices : Optional[List[List[int]]], default None
-            Specifies the order in which samples and mode values should be returned. It organizes the data into
-            three groups - certain, continuous, and categorical - and is shaped as [[indices for certain data],
-            [indices for continuous data], [indices for categorical data]]. This allows for the correct alignment
-            of sampled or calculated values when working with the instance.
-    
-        Raises
-        ------
-        ValueError
-            If the `continuous` parameter is provided but does not meet the expected type or interface requirements
-            (i.e., does not have the necessary methods for sampling or PDF evaluation).
-    
-        Notes
-        -----
-        - The `certain_data` parameter, if provided as a list, will be converted to a numpy array internally.
-        - If `certain_data` is None, an empty numpy array is initialized to represent no certain data.
-        - The `continuous` and `categorical` parameters allow for the representation of uncertain data. If not provided,
-          it is assumed there is no uncertainty associated with those types of data for this instance.
-        - The `indices` parameter is crucial for correctly aligning and processing the different types of data, especially
-          when performing operations that involve sampling or optimizing across the uncertain and certain data together.
+        """ Constructor Method for
         """
 
         certain_data = np.array([]) if certain_data is None else certain_data
