@@ -43,5 +43,5 @@ import sys
 
 
 sys.path.insert(0, os.path.abspath('/src/uframe/'))
-
+sys.path.insert(0, os.path.abspath('../src/uframe/'))
 
