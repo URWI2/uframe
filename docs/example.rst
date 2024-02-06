@@ -7,7 +7,7 @@ Here are some exmaples to get you started with the uframe package.
 Example 1: Introduciton example 
 -------------------------------------------------------
 
--- code-block:: python
+.. code-block:: python
 
     #import packages
     import uframe as uf 
@@ -16,7 +16,7 @@ Example 1: Introduciton example
 
     #creating uncertain data instances using scipy KDEs over random Data
     uncertain = []
-for i in range(10): 
+    for i in range(10): 
     uncertain.append(gaussian_kde(np.random.uniform(low = i/2, high = i+1, size= 100)))
 
     data = uf.uframe()
@@ -32,10 +32,11 @@ for i in range(10):
     # Determining the expected value of each instance:
     data.ev()
 
+
 Example 2: Simulating a uncertain data  
 -------------------------------------------------------
 
--- code-block::python
+.. code-block:: python
 
     import uframe as uf 
     from sklearn.datasets import load_iris
@@ -63,7 +64,7 @@ Example 2: Simulating a uncertain data
     uncertain = uf.uframe_from_array_mice(X, p=.5, seed = 42)
 
     #again the standard methods can be applied to the resulting uframe: 
-   # samples one instance from the whole data set
+    #samples one instance from the whole data set
     data.sample()
 
     # Calculating the mode of each instance using an optimization algorithm
@@ -71,6 +72,7 @@ Example 2: Simulating a uncertain data
 
     # Determining the expected value of each instance:
     data.ev()
+
 
 
 

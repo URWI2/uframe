@@ -16,7 +16,6 @@ Key Features:
 
 Whether you're dealing with incomplete or imprecise measurements, or simply need a reliable tool to handle uncertainty, uframe provides a robust foundation for your uncertain data analysis needs.
 
-Contents:
 
 .. toctree::
    :maxdepth: 2
