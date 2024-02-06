@@ -22,9 +22,12 @@ Contents:
    :maxdepth: 2
    :caption: Contents:
 
+   installation
+   example
    uframe
    uframeinstance
    generation
+
 
 Indices and tables
 ==================
