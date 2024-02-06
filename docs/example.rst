@@ -33,8 +33,12 @@ Example 1: Introduciton example
     data.ev()
 
 
-Example 2: Simulating a uncertain data  
+Example 2: Simulation of uncertain data  
 -------------------------------------------------------
+
+Often times in research one only needs uncertain data to try out different approaches. Here, the uncertain_from_array_mice() function comes into play. 
+The function deletes entries from an array and generates multiple predicitons for each missing value using the mice method. 
+Aftwerwards a KDE is fitted for each instance representing the uncertain instance. 
 
 .. code-block:: python
 
