@@ -1,7 +1,0 @@
-uframe instance
-=========
-
-.. automodule:: uframe.uframe_instance
-   :members:
-   :undoc-members:
-   :show-inheritance:
