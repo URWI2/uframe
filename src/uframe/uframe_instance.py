@@ -267,7 +267,7 @@ class uframe_instance():
         seed : int, optional
             The seed for the random number generator to ensure reproducibility of the samples. If not provided, the sampling process will be stochastic, potentially leading to different results on each invocation.
         threshold: float, optional 
-            If below 1, only the samples with the highest probability density are selected. Parameter defines percentage of samples chosen. 
+            If below 1, only the samples with the highest probability density are selected. Parameter defines percentage of samples chosen. Can be interpreted as cut-off of an pdf.
         Returns
         -------
         np.ndarray
@@ -413,7 +413,6 @@ class uframe_instance():
             return len(indices[1]) == 1
 
         return True
-
 
     def pdf(self, k): 
         """

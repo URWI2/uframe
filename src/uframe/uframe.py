@@ -1493,9 +1493,9 @@ class uframe():
         This example performs maximum likelihood estimation to classify each point into categories, based on the observed data and the uncertain model represented by the `uframe`.
         """
         if self.shape[1] != points.shape[1]: 
-            raise ValueError(f"Wrong Dimension of given points")
+            raise ValueError("Wrong Dimension of given points")
         if self.shape[0] != y.shape[0]:
-            raise ValueError(f"Wrong count of y values")
+            raise ValueError("Wrong count of y values")
             
         pdfs = self.pdf(points)
 

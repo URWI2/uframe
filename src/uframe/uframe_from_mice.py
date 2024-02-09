@@ -102,7 +102,6 @@ def uframe_from_array_sim(X: np.ndarray, p=0.5,
     
     X_missing, missing = generate_missing_values(complete_data = X, p = p, seed = seed , method = missing_method)
     
-    
     if std_method == "relative":
         stds = std * np.std(X, axis=1)
     else:
@@ -156,16 +155,16 @@ def uframe_from_array_mice(a: np.ndarray, p=0.1,
     mice_iterations : int, default=5
         The number of iterations the MICE algorithm will run to impute missing values.
     kernel : str, default="gaussian"
-        The kernel to use for density estimation of continuous variables. Supported values include "gaussian" for Gaussian kernels.
+        The kernel to use for density estimation of continuous variables. Supported values include "stats.gaussian_kde" for scipy Gaussian kernels. and "gaussian" for sklearn gaussian kernel.
     method : str, default='binomial'
-        The method to generate missing values artificially if `a` does not contain missing values. Default is 'binomial'.
+        The method to generate missing values artificially. Possible values are "binomial" and "fix". For binomial, each selection is treated as an independant event with a selection probability of p. For "fix", p percentage of entries in each column are selected. This is particular relevant for small datasets. 
     cat_indices : list, default=[]
         List of column indices in `a` that are categorical. These columns will be treated differently during the imputation process.
     seed : int, optional
         Seed for the random number generator to ensure reproducibility.
     **kwargs : dict
         Additional keyword arguments for the MICE imputation function.
-
+ 
     Returns
     -------
     uframe
