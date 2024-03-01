@@ -32,4 +32,4 @@ jobs:
         pip install tox tox-gh-actions
   
     - name: Run tox
-      run: tox
+      run: pytest
