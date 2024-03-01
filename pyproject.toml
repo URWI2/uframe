@@ -44,6 +44,7 @@ dependencies = [
   'numpy >= 1.23.5',
   'matplotlib',
   'miceforest',
+  'seaborn',
 ]
 
 [project.optional-dependencies]
