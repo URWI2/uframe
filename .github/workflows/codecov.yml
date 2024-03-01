@@ -8,8 +8,12 @@ jobs:
     name: Test coverage
     steps:
     - uses: actions/checkout@v1
-    - name: Install requirements
-      run: pip install -r requirements_dev.txt
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install --upgrade setuptools wheel pytest
+        pip install .
+  
     - name: Run tests and collect coverage
       run: python -m pytest --cov
     - name: Upload coverage reports to Codecov

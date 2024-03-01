@@ -78,7 +78,10 @@ class uframe_instance():
                 raise ValueError("Unknown continuous uncertainty object")
 
         if certain_data is not None:
+
             assert type(certain_data) in [np.ndarray, np.array]
+            if np.any(certain_data.imag != 0):
+                raise TypeError("Certain Data must be real valued")
             self.n_certain = len(certain_data)
 
         if categorical is not None:
