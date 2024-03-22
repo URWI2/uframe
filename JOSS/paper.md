@@ -39,7 +39,7 @@ Historically, individuals working with uncertain data resorted to crafting bespo
 
 # Functionality 
 
-The utilization of ‘uframe’ is distinguished by the instantiation of a ‘uframe’ object, followed by the application of its built-in methods. These methods enable users to access statistical measures such as mode or expected value for each data instance, evaluate the probability density function at various points, and draw samples from all instances. This functionality is pivotal for a broad spectrum of analytical applications, from probabilistic modeling to sensitivity analysis. Probability distributions can be either parametric and represented using the scipy package or kernel density estimations [@scipy; scikit-learn] 
+The utilization of ‘uframe’ is distinguished by the instantiation of a ‘uframe’ object, followed by the application of its built-in methods. These methods enable users to access statistical measures such as mode or expected value for each data instance, evaluate the probability density function at various points, and draw samples from all instances. This functionality is pivotal for a broad spectrum of analytical applications, from probabilistic modeling to sensitivity analysis. Probability distributions can be either parametric and represented using the scipy package or kernel density estimations [@scipy; @scikit-learn] 
 
 
 # Data Simulation 
