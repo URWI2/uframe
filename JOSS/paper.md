@@ -34,7 +34,7 @@ bibliography: paper.bib
 
 Aleatoric uncertainty is a pervasive aspect of real-world data, yet its integration into data analysis workflows remains conspicuously sparse [@Li]. A primary hurdle is the complexity inherent in managing uncertain data within Python-based environments. Addressing this gap, we present 'uframe', a Python package for the effective handling of uncertain data.
 
-Historically, individuals working with uncertain data resorted to crafting bespoke solutions for representing data instances with associated probability distributions, leading to a fragmented and inefficient landscape [@GuR, @Ge]. 'uframe' unifies this landscape by offering a cohesive framework for engaging with uncertain data, significantly enhancing the reproducibility, depth, and breadth of data analyses that incorporate uncertainty.
+Historically, individuals working with uncertain data resorted to crafting bespoke solutions for representing data instances with associated probability distributions, leading to a fragmented and inefficient landscape [@GuR; @Ge]. 'uframe' unifies this landscape by offering a cohesive framework for engaging with uncertain data, significantly enhancing the reproducibility, depth, and breadth of data analyses that incorporate uncertainty.
 
 
 # Functionality 
