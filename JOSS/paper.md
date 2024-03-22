@@ -44,7 +44,7 @@ The utilization of ‘uframe’ is distinguished by the instantiation of a ‘uf
 
 # Data Simulation 
 
-Due to the sparsity of data with known uncertainties, the simulation of uncertain datasets for research purposes is common practice. In some cases, certain attributes are replaced with normal distributions of a given variance and the original values mean [@GuR; @Ren]. In other cases, certain attributes are replaced with an equal distribution over a range of values[@Qin]. 
+Due to the sparsity of data with known uncertainties, the simulation of uncertain datasets for research purposes is common practice. In some cases, certain attributes are replaced with normal distributions of a given variance and the original values mean [@GuR; @Ren]. In other cases, certain attributes are replaced with an equal distribution over a range of values [@Qin]. 
 
 In the ‘uframe’ package, we introduce a more advanced approach to artificially add uncertainty in deterministic data. With the method ’uframe_from_array_mice’ uncertain data with arbitrary distributions can be generated, complete with a traceable generation process. This is achieved by omitting a fixed percentage of attribute values across a certain data set. Afterwards multiple imputations are generated for each missing attribute, for which a kernel density estimation is generated. This approach leads to data sets with known ground truths, making them invaluable for developing and evaluating a vast range of applications, from the training of machine learning models to the validation of analytical methods.
 
